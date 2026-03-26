@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment Variables (CRITICAL: keep keys private)
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test Results & Coverage
+test-results.json
+test-results.txt
+test-results-phase3.json
+coverage/
+.jest/
+
+# OS/IDE files
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
+
+# Project-specific temporary files
+generating/

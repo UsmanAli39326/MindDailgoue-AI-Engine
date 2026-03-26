@@ -1,0 +1,25 @@
+# Exclude local node_modules (Docker will install its own)
+node_modules/
+npm-debug.log*
+
+# Exclude sensitive environment files (will be passed via cloud env)
+.env
+.env.local
+.env.*
+
+# Exclude tests and test artifacts
+tests/
+test-results*
+coverage/
+.jest/
+
+# Exclude IDE and Git folders
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+
+# Exclude temp folders
+generating/
+tmp/

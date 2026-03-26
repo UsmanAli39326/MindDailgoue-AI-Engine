@@ -1,0 +1,33 @@
+{
+  "name": "minddialogue-ai-preprocessor",
+  "version": "1.0.0",
+  "description": "Therapy-based AI preprocessing and initialization module",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./sanitizer": "./src/inputSanitizer.js",
+    "./intent": "./src/intentDetector.js",
+    "./safety": "./src/safetyChecker.js",
+    "./prompt": "./src/systemPromptBuilder.js",
+    "./pipeline": "./src/pipeline.js",
+    "./execution": "./src/executionPipeline.js",
+    "./persona": "./src/personaManager.js",
+    "./memory": "./src/memoryManager.js",
+    "./llm": "./src/llmClient.js",
+    "./vectorMemory": "./src/vectorMemoryManager.js",
+    "./profile": "./src/userProfileManager.js",
+    "./phase3Execution": "./src/executionPipelinePhase3.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1"
+  }
+}
