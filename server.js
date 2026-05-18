@@ -1,97 +1,69 @@
-import http from 'http';
-import { executePhase3 } from './src/executionPipelinePhase3.js';
-import { getPersonaById } from './src/personaManager.js';
-import url from 'url';
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import healthRoutes from './src/routes/health.js';
+import chatRoutes from './src/routes/chat.js';
+import personalityRoutes from './src/routes/personalities.js';
+import adminRoutes from './src/routes/admin.js';
+import moodRoutes from './src/routes/mood.js';
+import insightsRoutes from './src/routes/insights.js';
+import sessionsRoutes from './src/routes/sessions.js';
+import memoryRoutes from './src/routes/memory.js';
+import themesRoutes from './src/routes/themes.js';
+import messagesRoutes from './src/routes/messages.js';
+import accountRoutes from './src/routes/account.js';
+import deviceRoutes from './src/routes/device.js';
+import statsRoutes from './src/routes/stats.js';
+import authRoutes from './src/routes/auth.js';
+import { verifyToken } from './src/middleware/auth.js';
+import { verifyAppCheck } from './src/middleware/appCheck.js';
+import { rateLimit } from './src/middleware/rateLimiter.js';
+import { requestLogger } from './src/middleware/requestLogger.js';
 
+import fs from 'fs';
+
+dotenv.config({ override: true });
+if (fs.existsSync('.env.local')) {
+  dotenv.config({ path: '.env.local', override: true });
+}
+
+const app = express();
 const PORT = process.env.PORT || 8000;
 
-const server = http.createServer(async (req, res) => {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// Middleware
+app.use(requestLogger);
+app.use(cors());
+app.use(express.json());
 
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
+// Public Routes (No Auth Required)
+app.use('/auth', authRoutes);
 
-  // Health check
-  if (req.method === 'GET' && req.url === '/') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      message: 'MindDialogue AI API is running!',
-      status: 'online'
-    }));
-    return;
-  }
+app.use(verifyToken);
+app.use(verifyAppCheck);
+app.use(rateLimit);
 
-  // Get Therapist Initial Message
-  if (req.method === 'GET' && req.url.startsWith('/therapist/initial-message')) {
-    const queryObject = url.parse(req.url, true).query;
-    const therapistId = queryObject.id;
+// Routes
+app.use('/', healthRoutes);
+app.use('/chat', chatRoutes);
+app.use('/therapist', personalityRoutes); // Maintaining backward compatibility for /therapist/initial-message
+app.use('/personalities', personalityRoutes);
+app.use('/admin', adminRoutes);
+app.use('/mood', moodRoutes);
+app.use('/insights', insightsRoutes);
+app.use('/sessions', sessionsRoutes);
+app.use('/memory', memoryRoutes);
+app.use('/themes', themesRoutes);
+app.use('/messages', messagesRoutes);
+app.use('/account', accountRoutes);
+app.use('/auth', deviceRoutes);
+app.use('/stats', statsRoutes);
 
-    if (!therapistId) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Missing therapist id parameter' }));
-      return;
-    }
-
-    try {
-      const persona = getPersonaById(therapistId);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        therapistId: persona.id,
-        name: persona.name,
-        initialMessage: persona.initialMessage 
-      }));
-    } catch (error) {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: error.message }));
-    }
-    return;
-  }
-
-  // Chat Endpoint
-  if (req.method === 'POST' && req.url === '/chat') {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-
-    req.on('end', async () => {
-      try {
-        const { sessionId, therapistId, input } = JSON.parse(body);
-        console.log(`[SERVER] Processing chat request: Session=${sessionId}, Therapist=${therapistId}, Input="${input}"`);
-        
-        if (!sessionId || !therapistId || !input) {
-          console.warn('[SERVER] Missing required fields in request');
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Missing required fields: sessionId, therapistId, input' }));
-          return;
-        }
-
-        const result = await executePhase3({ sessionId, therapistId, input });
-        console.log(`[SERVER] Pipeline complete, sending response.`);
-        
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (error) {
-        console.error('[SERVER] API Error:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Internal Server Error', details: error.message }));
-      }
-    });
-    return;
-  }
-
-  // Not Found
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Not Found' }));
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error('[SERVER ERROR]', err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
-server.listen(PORT, () => {
-  console.log(`MindDialogue API Server listening on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`✅ MindDialogue API Server (Express) listening on port ${PORT}`);
 });

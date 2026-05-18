@@ -17,23 +17,82 @@ import { assembleEnhancedPrompt } from './enhancedPromptAssembler.js';
 import { callLLM } from './llmClient.js';
 import { checkResponseSafety } from './responseSafetyCheck.js';
 import { postProcess } from './responsePostProcessor.js';
+import { isUserInCooldown, handleCrisis } from './middleware/crisisHandler.js';
+import { logMood } from './services/moodService.js';
+import { getSessionContext } from './services/memoryContext.js';
+import { shouldSummarize, summarizeAndStore } from './services/sessionSummarizer.js';
+import { updateThemes } from './services/themeTracker.js';
+import { recordActivity } from './services/streakService.js';
+import { storeEncryptedMessage } from './services/encryptedStorage.js';
+import { getUserBasicInfo, updateLastActive } from './services/userService.js';
 
-export async function executePhase3({ sessionId, therapistId, input }) {
+export async function executePhase3({ sessionId, therapistId, input, uid }) {
+  // 0. Cooldown check
+  if (isUserInCooldown(uid)) {
+    return {
+      message: "I care about you, and I want to make sure we're approaching this safely. Let's take a brief moment to breathe.",
+      emotion: "calm",
+      intensity: 0.5,
+      stress_level: 0.5,
+      crisis: false,
+      suggestions: [],
+      mood_tag: "cooldown",
+      crisis_mode: true,
+      error: "429 Too Many Requests"
+    };
+  }
+
   // 1. PHASE 1: Run Input processing
   const phase1Output = processInputSafely(input);
 
   // Load Phase 2 persona and session memory (short term)
-  const persona = getPersonaById(therapistId);
-  getOrCreateSession(sessionId, therapistId);
+  const persona = await getPersonaById(therapistId, uid);
+  await getOrCreateSession(sessionId, therapistId);
 
-  appendMessage(sessionId, 'user', phase1Output.cleanedInput || input);
-  const recentHistory = getRecentHistory(sessionId);
+  await appendMessage(sessionId, 'user', phase1Output.cleanedInput || input);
+
+  if (uid) {
+    storeEncryptedMessage(uid, {
+      ciphertext: phase1Output.cleanedInput || input,
+      iv: 'plaintext',
+      sessionId,
+      role: 'user'
+    }).catch(err => console.error('[DB PERSISTENCE] User message fail:', err.message));
+  }
+
+  const recentHistory = await getRecentHistory(sessionId);
 
   // 2. High-Risk Short Circuit
-  if (phase1Output.nextStep === 'crisis_override' || phase1Output.isHighRisk) {
-    const rawResponse = phase1Output.systemPrompt;
-    appendMessage(sessionId, 'assistant', rawResponse);
-    return buildOutput(rawResponse, false, phase1Output, persona, 0, false, { modelUsed: 'none' });
+  if (phase1Output.nextStep === 'crisis_override') {
+    const fallbackResponse = {
+      message: "I hear you, and I want you to know that you are not alone. Please reach out to a professional or someone you trust who can support you right now. Your safety is the absolute priority.",
+      emotion: "calm",
+      intensity: 0.9,
+      stress_level: 0.9,
+      crisis: true,
+      suggestions: ["Call 988", "Text HOME to 741741"],
+      mood_tag: "crisis_override"
+    };
+
+    const augmented = await handleCrisis(fallbackResponse, {
+      uid,
+      sessionId,
+      scannerCategory: phase1Output.safetyCategory,
+      isHighRisk: true
+    });
+
+    await appendMessage(sessionId, 'assistant', augmented.message);
+
+    if (uid) {
+      storeEncryptedMessage(uid, {
+        ciphertext: augmented.message,
+        iv: 'plaintext',
+        sessionId,
+        role: 'assistant'
+      }).catch(err => console.error('[DB PERSISTENCE] Assistant crisis override fail:', err.message));
+    }
+
+    return buildOutput(augmented, false, phase1Output, persona, 0, false, { modelUsed: 'none' });
   }
 
   // 3. Retrieve highly relevant past memories (top 2) using current input
@@ -65,8 +124,22 @@ export async function executePhase3({ sessionId, therapistId, input }) {
   const userProfile = getProfile(sessionId);
 
   // 6. Context Building
-  const memoryContext = buildMemoryContext(relevantMemories);
-  const profileContext = buildProfileContext(userProfile);
+  let crossSessionContext = '';
+  let userBasicInfo = null;
+  try {
+    if (uid) {
+      const [context, basicInfo] = await Promise.all([
+        getSessionContext(uid),
+        getUserBasicInfo(uid)
+      ]);
+      crossSessionContext = context;
+      userBasicInfo = basicInfo;
+    }
+  } catch (err) {
+    console.warn('Context fetch failed:', err.message);
+  }
+  const memoryContext = buildMemoryContext(relevantMemories, crossSessionContext);
+  const profileContext = buildProfileContext(userProfile, userBasicInfo);
   const adaptiveInstructions = getAdaptiveInstructions(userProfile);
 
   // 7. Assemble final Phase 3 Prompt
@@ -84,15 +157,31 @@ export async function executePhase3({ sessionId, therapistId, input }) {
   let wasFallback = false;
   let errorMsg = null;
   try {
-    llmOutput = await callLLM({ prompt, temperature: 0.7 }); // Phase 2 default
+    llmOutput = await callLLM({ prompt, temperature: 0.78 }); // Set to 0.78 for natural, non-robotic flow
   } catch (err) {
     console.error('LLM Call Failed:', err.message);
     wasFallback = true;
     errorMsg = err.message;
-    llmOutput = {
-      text: 'I\'m here and I want to help, but I\'m having a moment of difficulty. Could you share that with me again? I want to make sure I give you the thoughtful response you deserve.',
-      model: 'none'
-    };
+
+    if (phase1Output.isHighRisk) {
+      llmOutput = {
+        text: JSON.stringify({
+          message: 'I hear you, and I want you to know that you are not alone. Please reach out to someone who can help you right now. Your safety and well-being are incredibly important.',
+          emotion: 'calm',
+          intensity: 0.9,
+          stress_level: 0.9,
+          crisis: true,
+          suggestions: ['Call 988', 'Text HOME to 741741'],
+          mood_tag: 'crisis_fallback'
+        }),
+        model: 'none'
+      };
+    } else {
+      llmOutput = {
+        text: 'I\'m here and I want to help, but I\'m having a moment of difficulty. Could you share that with me again? I want to make sure I give you the thoughtful response you deserve.',
+        model: 'none'
+      };
+    }
   }
 
   // 9. Post-Process & Safety Check
@@ -109,18 +198,61 @@ export async function executePhase3({ sessionId, therapistId, input }) {
   // 10. Update Profile (incremental drift prevention)
   let profileUpdated = false;
   if (!wasFallback) {
-    updateProfile(sessionId, { 
+    updateProfile(sessionId, {
       intent: phase1Output.detectedIntent,
-      entities: phase1Output.metadata.entities 
+      entities: phase1Output.metadata.entities
     });
     profileUpdated = true;
   }
 
+  // 11. Crisis Handling (Phase 2A)
+  const augmentedResponse = await handleCrisis(finalResponse, {
+    uid,
+    sessionId,
+    scannerCategory: phase1Output.safetyCategory,
+    isHighRisk: phase1Output.isHighRisk
+  });
+
+  // 12. Mood Auto-Logging (Phase 3A — fire-and-forget)
+  logMood(uid, sessionId, augmentedResponse);
+
   // Append safe response to short-term history
-  appendMessage(sessionId, 'assistant', finalResponse);
+  await appendMessage(sessionId, 'assistant', augmentedResponse.message || augmentedResponse);
+
+  if (uid) {
+    storeEncryptedMessage(uid, {
+      ciphertext: augmentedResponse.message || augmentedResponse,
+      iv: 'plaintext',
+      sessionId,
+      role: 'assistant'
+    }).catch(err => console.error('[DB PERSISTENCE] Assistant message fail:', err.message));
+    
+    // Update last active timestamp for check-in push notifications
+    updateLastActive(uid);
+  }
+
+  // 13. Auto-Summarization, Streak, & Theme Tracking (Phase 4A, 4D & 5A — fire-and-forget)
+  if (uid) {
+    try {
+      recordActivity(uid);
+      const currentHistory = await getRecentHistory(sessionId);
+      const historyLines = currentHistory ? currentHistory.split('\n').filter(Boolean) : [];
+      if (shouldSummarize(historyLines.length)) {
+        summarizeAndStore(uid, sessionId, historyLines).then(summary => {
+          if (summary && summary.themes && summary.themes.length > 0) {
+            updateThemes(uid, summary.themes);
+          }
+        }).catch(err => {
+          console.error('[AUTO-SUMMARIZER] Error storing summary:', err.message);
+        });
+      }
+    } catch (err) {
+      console.warn('[AUTO-SUMMARIZER] Trigger check failed:', err.message);
+    }
+  }
 
   return buildOutput(
-    finalResponse,
+    augmentedResponse,
     !safetyResult.safe,
     phase1Output,
     persona,
@@ -142,7 +274,7 @@ function processInputSafely(input) {
   } catch (err) {
     return {
       cleanedInput: typeof input === 'string' ? input.trim() : '',
-      detectedIntent: 'neutral',
+      detectedIntent: 'calm',
       intentConfidence: 'low',
       isHighRisk: false,
       nextStep: 'continue',
@@ -151,11 +283,56 @@ function processInputSafely(input) {
   }
 }
 
-function buildOutput(response, unsafe, p1, persona, memoriesUsed, profileUpdated, meta = {}) {
+function buildOutput(envelope, unsafe, p1, persona, memoriesUsed, profileUpdated, meta = {}) {
+  // If envelope is still a string (fallback case from earlier phases), wrap it
+  const responseEnvelope = typeof envelope === 'string' ? {
+    message: envelope,
+    emotion: "calm",
+    intensity: 0.5,
+    stress_level: 0.3,
+    crisis: false,
+    suggestions: [],
+    mood_tag: "fallback_legacy"
+  } : { ...envelope };
+
+  // Dynamic Heuristic Refinement for fallback classifications (e.g. when LLM outputs plain text instead of JSON)
+  if (meta.wasFallback || responseEnvelope.mood_tag === 'fallback' || responseEnvelope.mood_tag === 'fallback_legacy') {
+    let intent = p1.detectedIntent || 'calm';
+    if (intent === 'hopeful') intent = 'happy';
+    else if (intent === 'angry') intent = 'stressed';
+    else if (intent === 'confused' || intent === 'neutral') intent = 'calm';
+
+    responseEnvelope.emotion = intent;
+    responseEnvelope.mood_tag = 'fallback_heuristics';
+
+    // Map intent detector confidence to emotion intensity
+    const confidenceIntensity = {
+      high: 0.85,
+      medium: 0.65,
+      low: 0.45
+    };
+    responseEnvelope.intensity = confidenceIntensity[p1.intentConfidence] || 0.5;
+
+    // Formulate stress level based on intent and confidence
+    const highStressIntents = ['stressed', 'anxious', 'sad'];
+    if (highStressIntents.includes(intent)) {
+      responseEnvelope.stress_level = p1.intentConfidence === 'high' ? 0.8 : (p1.intentConfidence === 'medium' ? 0.6 : 0.4);
+    } else if (intent === 'happy') {
+      responseEnvelope.stress_level = 0.15;
+    } else {
+      responseEnvelope.stress_level = 0.25;
+    }
+  }
+
+  let finalIntent = p1.detectedIntent || 'calm';
+  if (finalIntent === 'hopeful') finalIntent = 'happy';
+  else if (finalIntent === 'angry') finalIntent = 'stressed';
+  else if (finalIntent === 'confused' || finalIntent === 'neutral') finalIntent = 'calm';
+
   return {
-    response,
+    ...responseEnvelope,
     therapistId: persona.id,
-    detectedIntent: p1.detectedIntent || 'neutral',
+    detectedIntent: finalIntent,
     relevantMemoriesUsed: memoriesUsed,
     profileUpdated,
     isHighRisk: !!p1.isHighRisk,

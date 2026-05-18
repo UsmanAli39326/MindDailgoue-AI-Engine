@@ -22,22 +22,22 @@ describe('intentDetector', () => {
       expect(result.scores.sad).toBeGreaterThan(0);
     });
 
-    test('detects angry intent from keywords', () => {
+    test('detects stressed intent from keywords', () => {
       const result = detect('i am so angry and frustrated right now');
-      expect(result.intent).toBe('angry');
-      expect(result.scores.angry).toBeGreaterThan(0);
+      expect(result.intent).toBe('stressed');
+      expect(result.scores.stressed).toBeGreaterThan(0);
     });
 
-    test('detects hopeful intent from keywords', () => {
+    test('detects happy intent from keywords', () => {
       const result = detect('i feel hopeful and optimistic about my future');
-      expect(result.intent).toBe('hopeful');
-      expect(result.scores.hopeful).toBeGreaterThan(0);
+      expect(result.intent).toBe('happy');
+      expect(result.scores.happy).toBeGreaterThan(0);
     });
 
-    test('detects confused intent from keywords', () => {
+    test('detects anxious intent from confused keywords', () => {
       const result = detect('i am so confused and unsure what to do');
-      expect(result.intent).toBe('confused');
-      expect(result.scores.confused).toBeGreaterThan(0);
+      expect(result.intent).toBe('anxious');
+      expect(result.scores.anxious).toBeGreaterThan(0);
     });
 
     // --- Phrase-level detection ---
@@ -55,9 +55,9 @@ describe('intentDetector', () => {
       expect(result.scores.sad).toBeGreaterThan(0);
     });
 
-    test('detects angry intent from phrase "sick of this"', () => {
+    test('detects stressed intent from phrase "sick of this"', () => {
       const result = detect("i'm sick of this and fed up with everything");
-      expect(result.intent).toBe('angry');
+      expect(result.intent).toBe('stressed');
     });
 
     // --- Negation handling ---
@@ -79,28 +79,28 @@ describe('intentDetector', () => {
       expect(result.scores.sad).toBe(0);
     });
 
-    test('negation: "never angry" should NOT classify as angry', () => {
+    test('negation: "never angry" should NOT classify as stressed', () => {
       const result = detect('i am never angry at them');
-      expect(result.scores.angry).toBe(0);
+      expect(result.scores.stressed).toBe(0);
     });
 
-    // --- Neutral fallback ---
+    // --- Calm fallback ---
 
-    test('returns neutral for unrecognizable input', () => {
+    test('returns calm for unrecognizable input', () => {
       const result = detect('the weather is nice today');
-      expect(result.intent).toBe('neutral');
+      expect(result.intent).toBe('calm');
       expect(result.confidence).toBe('low');
     });
 
-    test('returns neutral for empty input', () => {
+    test('returns calm for empty input', () => {
       const result = detect('');
-      expect(result.intent).toBe('neutral');
+      expect(result.intent).toBe('calm');
       expect(result.confidence).toBe('low');
     });
 
-    test('returns neutral for non-string input', () => {
+    test('returns calm for non-string input', () => {
       const result = detect(null);
-      expect(result.intent).toBe('neutral');
+      expect(result.intent).toBe('calm');
     });
 
     // --- Score breakdown ---

@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 
 // ─── Constants ─────────────────────────────────────────────
-const STRONG_EMOTIONS = ['sad', 'anxious', 'angry'];
+const STRONG_EMOTIONS = ['sad', 'anxious', 'stressed'];
 
 // Simple heuristics for personal facts/stressors
 const PERSONAL_FACT_PATTERNS = [
@@ -40,11 +40,16 @@ export function filterMemory(cleanedInput, detectedIntent, isHighRisk) {
     return { shouldStore: false, importance: 'low' };
   }
 
+  let intent = detectedIntent;
+  if (intent === 'hopeful') intent = 'happy';
+  else if (intent === 'angry') intent = 'stressed';
+  else if (intent === 'confused' || intent === 'neutral') intent = 'calm';
+
   let shouldStore = false;
   let importance = 'low';
 
   // 1. Check strong emotional signals or risk
-  if (isHighRisk || STRONG_EMOTIONS.includes(detectedIntent)) {
+  if (isHighRisk || STRONG_EMOTIONS.includes(intent)) {
     shouldStore = true;
     importance = 'high';
   }

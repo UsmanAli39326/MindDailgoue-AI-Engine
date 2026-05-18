@@ -82,7 +82,19 @@ export function assembleEnhancedPrompt({
   // 9. Instructions (Base + Adaptive Phase 3)
   sections.push(
     `[INSTRUCTIONS]`,
-    phase2Internals.THERAPEUTIC_INSTRUCTIONS
+    phase2Internals.THERAPEUTIC_INSTRUCTIONS,
+    '',
+    `You MUST respond ONLY with a valid JSON object. Do not include any text, markdown formatting (like \`\`\`json), or conversational prose outside the JSON block.`,
+    `The JSON object MUST follow this exact structure:`,
+    `{`,
+    `  "message": "Your warm, empathetic, conversational response here (e.g. speaking directly as Dr. Amara)",`,
+    `  "emotion": "one of: anxious, calm, sad, angry, hopeful, neutral",`,
+    `  "intensity": 0.0 to 1.0 (float),`,
+    `  "stress_level": 0.0 to 1.0 (float),`,
+    `  "crisis": true or false,`,
+    `  "suggestions": ["suggestion 1", "suggestion 2"],`,
+    `  "mood_tag": "short descriptive tag"`,
+    `}`
   );
 
   if (adaptiveInstructions) {
@@ -93,7 +105,7 @@ export function assembleEnhancedPrompt({
   sections.push(
     '',
     `[RESPONSE]`,
-    `${persona.name}:`
+    `{`
   );
 
   return sections.join('\n');

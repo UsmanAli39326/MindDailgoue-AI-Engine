@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backend Development Roadmap — AI Therapy App</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #13161b;
+    --surface2: #1a1e25;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e6e0;
+    --muted: #7a7870;
+    --accent: #c9f0a8;
+    --accent2: #7dd3fc;
+    --accent3: #f0a8c9;
+    --accent4: #f0d0a8;
+    --accent5: #a8c9f0;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Fraunces', serif;
+    --sans: 'Instrument Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    padding: 56px 48px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(201,240,168,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid rgba(201,240,168,0.25);
+    padding: 3px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 42px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 10px;
+    font-family: var(--mono);
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .stat {
+    flex: 1;
+    padding: 18px 28px;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    display: block;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Main layout */
+  .main {
+    padding: 40px 48px;
+    max-width: 1100px;
+  }
+
+  /* Phase cards */
+  .phase {
+    margin-bottom: 48px;
+    position: relative;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .phase-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    min-width: 64px;
+  }
+
+  .phase-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .phase-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .pill-time {
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .pill-p1 { background: rgba(201,240,168,0.1); color: var(--accent); border: 1px solid rgba(201,240,168,0.2); }
+  .pill-p2 { background: rgba(125,211,252,0.1); color: var(--accent2); border: 1px solid rgba(125,211,252,0.2); }
+  .pill-p3 { background: rgba(240,168,201,0.1); color: var(--accent3); border: 1px solid rgba(240,168,201,0.2); }
+  .pill-p4 { background: rgba(240,208,168,0.1); color: var(--accent4); border: 1px solid rgba(240,208,168,0.2); }
+  .pill-p5 { background: rgba(168,201,240,0.1); color: var(--accent5); border: 1px solid rgba(168,201,240,0.2); }
+  .pill-p6 { background: rgba(201,240,168,0.08); color: #b0e090; border: 1px solid rgba(201,240,168,0.15); }
+
+  /* Task grid */
+  .task-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    transition: border-color 0.15s;
+  }
+
+  .task-card:hover { border-color: var(--border2); }
+
+  .task-card.full { grid-column: span 2; }
+
+  .task-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.06em;
+  }
+
+  .task-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .task-desc {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 12px;
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: #0a0c0f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #9cb8a0;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-top: 10px;
+  }
+
+  .code-block .cm { color: #4a5a48; }
+  .code-block .ck { color: #7dd3fc; }
+  .code-block .cv { color: #f0d0a8; }
+  .code-block .cs { color: #c9f0a8; }
+  .code-block .cn { color: #f0a8c9; }
+
+  /* Step list */
+  .steps {
+    list-style: none;
+    margin-top: 6px;
+  }
+
+  .steps li {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 3px 0;
+    align-items: flex-start;
+  }
+
+  .steps li::before {
+    content: '→';
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 0px;
+    opacity: 0.5;
+  }
+
+  /* Schema blocks */
+  .schema {
+    background: #0a0c0f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #8a9e8c;
+    line-height: 1.8;
+    margin-top: 10px;
+  }
+
+  .schema .key { color: var(--accent2); }
+  .schema .val { color: var(--accent4); }
+  .schema .type { color: var(--muted); font-style: italic; }
+  .schema .comment { color: #3a4a38; }
+
+  /* Divider label */
+  .section-note {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    grid-column: span 2;
+  }
+
+  .section-note::before {
+    content: '!';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    opacity: 0.6;
+  }
+
+  /* Tag list */
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .tag-item {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+  }
+
+  /* Connector line between phases */
+  .phase-connector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: -24px 0 24px 0;
+    padding-left: 0;
+  }
+
+  .connector-line {
+    height: 1px;
+    flex: 1;
+    background: var(--border);
+  }
+
+  .connector-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 48px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="tag">Agent Instruction Document · Backend Roadmap</div>
+  <h1>AI Therapy App<br><em>Backend Build Plan</em></h1>
+  <div class="subtitle">Node.js · Firebase · 6 phases · Chatbot already complete — build on top</div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <span class="stat-val">6</span>
+    <span class="stat-label">Phases</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">28</span>
+    <span class="stat-label">Tasks</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">✓</span>
+    <span class="stat-label">Chatbot complete</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">Node.js</span>
+    <span class="stat-label">Runtime</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">Firebase</span>
+    <span class="stat-label">Database</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ─── PHASE 1 ─────────────────────────────────────────── -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">Phase 01</span>
+      <span class="phase-title">Structured AI Response Layer</span>
+      <div class="phase-meta">
+        <span class="pill pill-time">Start here</span>
+        <span class="pill pill-p1">Foundation</span>
+      </div>
+    </div>
+
+    <div class="task-grid">
+
+      <div class="task-card">
+        <span class="task-id">P1-T1 · PROMPT ENGINEERING</span>
+        <div class="task-name">Design the universal AI response envelope</div>
+        <div class="task-desc">Every AI call must return a structured JSON payload — not just a message string. Modify the existing chatbot prompt to always respond in this schema. The AI does emotion analysis as part of the same call, no second call needed.</div>
+        <div class="schema">
+{<br>
+&nbsp;&nbsp;<span class="key">"message"</span>: <span class="val">"string"</span>,          <span class="comment">// therapist reply text</span><br>
+&nbsp;&nbsp;<span class="key">"emotion"</span>: <span class="val">"anxious|calm|sad|angry|hopeful|neutral"</span>,<br>
+&nbsp;&nbsp;<span class="key">"intensity"</span>: <span class="val">0.0–1.0</span>,       <span class="comment">// emotion strength</span><br>
+&nbsp;&nbsp;<span class="key">"stress_level"</span>: <span class="val">0.0–1.0</span>,    <span class="comment">// inferred stress</span><br>
+&nbsp;&nbsp;<span class="key">"crisis"</span>: <span class="val">true|false</span>,       <span class="comment">// crisis flag</span><br>
+&nbsp;&nbsp;<span class="key">"suggestions"</span>: <span class="val">["string"]</span>,   <span class="comment">// 0–2 quick actions</span><br>
+&nbsp;&nbsp;<span class="key">"mood_tag"</span>: <span class="val">"string"</span>         <span class="comment">// for timeline storage</span><br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P1-T2 · RESPONSE PARSING</span>
+        <div class="task-name">Build a safe JSON parser middleware</div>
+        <div class="task-desc">LLMs sometimes return malformed JSON or wrap it in markdown fences. Write a parseAIResponse() utility that strips fences, attempts JSON.parse, validates required fields, and falls back gracefully to a plain text response with default emotion values if parsing fails.</div>
+        <div class="code-block">
+<span class="cm">// utils/parseAIResponse.js</span><br>
+<span class="ck">function</span> <span class="cv">parseAIResponse</span>(raw) {<br>
+&nbsp;&nbsp;<span class="ck">const</span> cleaned = raw<br>
+&nbsp;&nbsp;&nbsp;&nbsp;.replace(<span class="cs">/```json|```/g</span>, <span class="cs">''</span>).trim();<br>
+&nbsp;&nbsp;<span class="ck">try</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">const</span> parsed = JSON.parse(cleaned);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">return</span> validate(parsed); <span class="cm">// fill missing fields</span><br>
+&nbsp;&nbsp;} <span class="ck">catch</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">return</span> fallback(raw); <span class="cm">// safe default envelope</span><br>
+&nbsp;&nbsp;}<br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P1-T3 · PERSONALITY SYSTEM</span>
+        <div class="task-name">Therapist personality prompt injection</div>
+        <div class="task-desc">Store therapist personality configs in Firestore under /personalities/{id}. Each doc has a system_prompt, name, tone, and avatar_ref. On session start, fetch the chosen personality and prepend its system_prompt to every AI call. Custom characters store user-authored prompts in the same collection under /users/{uid}/personalities/{id}.</div>
+        <div class="steps">
+          <li>GET /personalities — list all built-in personalities</li>
+          <li>POST /personalities/custom — create user custom character</li>
+          <li>Session middleware injects personality into each AI request</li>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P1-T4 · FIRESTORE SCHEMA</span>
+        <div class="task-name">Define Firestore collection structure</div>
+        <div class="task-desc">All Firebase collections should be defined before building endpoints. This prevents schema drift later. Use sub-collections for chat history so reads are scoped and efficient.</div>
+        <div class="schema">
+<span class="comment">// Firestore collections</span><br>
+users/{uid}/<br>
+&nbsp;&nbsp;sessions/{sessionId}/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;messages/{msgId}   <span class="comment">// encrypted</span><br>
+&nbsp;&nbsp;moodLog/{date}<br>
+&nbsp;&nbsp;memory/{memoryId}<br>
+&nbsp;&nbsp;streaks/current<br>
+personalities/{id}<br>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── PHASE 2 ─────────────────────────────────────────── -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">Phase 02</span>
+      <span class="phase-title">Emotion, Mood & Stress Tracking</span>
+      <div class="phase-meta">
+        <span class="pill pill-time">After phase 1</span>
+        <span class="pill pill-p2">Analytics</span>
+      </div>
+    </div>
+
+    <div class="task-grid">
+
+      <div class="task-card">
+        <span class="task-id">P2-T1 · MOOD LOGGING</span>
+        <div class="task-name">Persist emotion data per message to Firestore</div>
+        <div class="task-desc">After every AI response, extract emotion, intensity, and stress_level from the envelope and write them to /users/{uid}/moodLog/{YYYY-MM-DD} as an array of timestamped entries. This builds the raw data for the timeline and heatmap. Do not wait for the user to explicitly log — it's automatic and silent.</div>
+        <div class="schema">
+moodLog/{YYYY-MM-DD}: {<br>
+&nbsp;&nbsp;<span class="key">entries</span>: [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">ts</span>: <span class="val">Timestamp</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">emotion</span>: <span class="val">"anxious"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">intensity</span>: <span class="val">0.7</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">stress</span>: <span class="val">0.6</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">sessionId</span>: <span class="val">"string"</span><br>
+&nbsp;&nbsp;}]<br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P2-T2 · TIMELINE API</span>
+        <div class="task-name">Build mood timeline and heatmap endpoints</div>
+        <div class="task-desc">Flutter needs pre-aggregated data — don't make the client compute. Build two read endpoints that aggregate the raw moodLog entries into timeline and heatmap formats the frontend can render directly.</div>
+        <div class="steps">
+          <li>GET /mood/timeline?days=30 — returns daily emotion arrays sorted by time</li>
+          <li>GET /mood/heatmap?weeks=12 — returns {date, avg_stress} for calendar heatmap</li>
+          <li>GET /mood/summary — returns weekly emotion breakdown percentages</li>
+          <li>All endpoints scoped to authenticated user via Firebase Auth middleware</li>
+        </div>
+      </div>
+
+      <div class="task-card full">
+        <span class="task-id">P2-T3 · DAILY INSIGHTS ENGINE</span>
+        <div class="task-name">Generate daily insights and inspirational prompts</div>
+        <div class="task-desc">Every day at midnight UTC, run a Cloud Function (Firebase Scheduled Function) that reads the user's last 7 days of moodLog, calls the AI with a summarization prompt, and writes a structured insight object to /users/{uid}/insights/latest. The Flutter app reads this on app open. Also generate an inspirational prompt tailored to the user's dominant recent emotion.</div>
+        <div class="code-block">
+<span class="cm">// functions/generateDailyInsight.js  (Firebase Scheduled Function)</span><br>
+<span class="cm">// Runs: every day at 00:05 UTC</span><br>
+<span class="cm">// 1. Read moodLog for last 7 days for each active user</span><br>
+<span class="cm">// 2. Build prompt: "Based on these emotion entries: [...], give a short</span><br>
+<span class="cm">//    empathetic insight (2 sentences) and an inspirational prompt."</span><br>
+<span class="cm">// 3. Parse response, write to /users/{uid}/insights/latest</span><br>
+<span class="cm">// Output schema:</span><br>
+<span class="cm">// { insight: string, prompt: string, dominant_emotion: string, generatedAt: Timestamp }</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── PHASE 3 ─────────────────────────────────────────── -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">Phase 03</span>
+      <span class="phase-title">Long-Term Memory System</span>
+      <div class="phase-meta">
+        <span class="pill pill-time">After phase 2</span>
+        <span class="pill pill-p3">Intelligence</span>
+      </div>
+    </div>
+
+    <div class="task-grid">
+
+      <div class="task-card">
+        <span class="task-id">P3-T1 · SESSION SUMMARIZATION</span>
+        <div class="task-name">Auto-summarize sessions into memory blobs</div>
+        <div class="task-desc">After every 10 messages in a session (or on session close), trigger a background job that sends the last 10 messages to the AI with the instruction: "Summarize this therapy exchange in under 150 tokens, preserving key emotional themes, concerns raised, and any breakthroughs." Store the summary in /users/{uid}/memory/{memoryId} with a timestamp.</div>
+        <div class="schema">
+memory/{id}: {<br>
+&nbsp;&nbsp;<span class="key">summary</span>: <span class="val">"string (≤150 tokens)"</span>,<br>
+&nbsp;&nbsp;<span class="key">themes</span>: <span class="val">["anxiety", "work"]</span>,<br>
+&nbsp;&nbsp;<span class="key">createdAt</span>: <span class="val">Timestamp</span>,<br>
+&nbsp;&nbsp;<span class="key">sessionId</span>: <span class="val">"string"</span>,<br>
+&nbsp;&nbsp;<span class="key">messageRange</span>: <span class="val">[0, 10]</span><br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P3-T2 · CONTEXT INJECTION</span>
+        <div class="task-name">Inject memory blobs into new session prompts</div>
+        <div class="task-desc">On session start, fetch the 3 most recent memory blobs for the user and inject them into the system prompt as "Previous session context." Cap injected memory at ~400 tokens total to avoid bloating the context window. The AI will naturally reference past conversations without being explicitly told to.</div>
+        <div class="code-block">
+<span class="cm">// services/memory.js</span><br>
+<span class="ck">async function</span> <span class="cv">buildContextPrompt</span>(uid, personalityPrompt) {<br>
+&nbsp;&nbsp;<span class="ck">const</span> blobs = <span class="ck">await</span> getRecentMemory(uid, <span class="cv">3</span>);<br>
+&nbsp;&nbsp;<span class="ck">const</span> memCtx = blobs.map(<span class="cv">b</span> => b.summary).join(<span class="cs">'\n'</span>);<br>
+&nbsp;&nbsp;<span class="ck">return</span> [personalityPrompt,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cs">`Past context:\n${memCtx}`</span>].join(<span class="cs">'\n\n'</span>);<br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P3-T3 · MEMORY MANAGEMENT</span>
+        <div class="task-name">Memory pruning and retrieval API</div>
+        <div class="task-desc">Over time memory blobs accumulate. Keep only the most recent 20 blobs per user. Add a Cloud Function that runs weekly to prune old blobs. Also expose a DELETE /memory endpoint so users can clear their memory from the app settings screen (privacy feature).</div>
+        <div class="steps">
+          <li>GET /memory — list user's memory blobs (for settings UI)</li>
+          <li>DELETE /memory — clear all memory (GDPR-style right to erase)</li>
+          <li>Weekly Cloud Function prunes blobs older than 60 days if count > 20</li>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P3-T4 · THEME TRACKING</span>
+        <div class="task-name">Extract and track recurring themes across sessions</div>
+        <div class="task-desc">Each memory blob includes a themes array (e.g. ["anxiety", "relationships", "work"]). Aggregate these across the user's blobs to maintain a /users/{uid}/themeProfile document that counts frequency of each theme. This powers future insight generation and lets the AI reference recurring patterns.</div>
+        <div class="steps">
+          <li>On each memory write, update themeProfile with new theme counts</li>
+          <li>GET /themes — returns top themes with frequency for UI display</li>
+          <li>Inject top 3 themes into daily insight generation prompt</li>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── PHASE 4 ─────────────────────────────────────────── -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">Phase 04</span>
+      <span class="phase-title">Crisis Detection & Safety Layer</span>
+      <div class="phase-meta">
+        <span class="pill pill-time">After phase 1</span>
+        <span class="pill pill-p4">Critical</span>
+      </div>
+    </div>
+
+    <div class="task-grid">
+
+      <div class="section-note">
+        This phase can be built in parallel with phases 2–3 since it hooks into the response envelope from Phase 1. Crisis detection is non-negotiable — it must be server-side and cannot be bypassed by the client.
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P4-T1 · CRISIS FLAG HANDLER</span>
+        <div class="task-name">Server-side crisis detection and response routing</div>
+        <div class="task-desc">When the AI response envelope returns crisis: true, the backend must intercept before sending to the client. Log the crisis event to /crisisLog/{uid}/{timestamp} with the session context (no message content for privacy). Apply a 60-second cooldown on that user's session. Return an augmented response that includes crisis_mode: true and a resources array alongside the normal message.</div>
+        <div class="schema">
+<span class="comment">// Crisis response envelope</span><br>
+{<br>
+&nbsp;&nbsp;<span class="key">message</span>: <span class="val">"string"</span>,<br>
+&nbsp;&nbsp;<span class="key">crisis_mode</span>: <span class="val">true</span>,<br>
+&nbsp;&nbsp;<span class="key">resources</span>: [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">name</span>: <span class="val">"Crisis Helpline"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">number</span>: <span class="val">"string"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">url</span>: <span class="val">"string"</span><br>
+&nbsp;&nbsp;}]<br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P4-T2 · SECONDARY DETECTION</span>
+        <div class="task-name">Keyword-based secondary crisis scanner</div>
+        <div class="task-desc">The AI is the primary detector, but add a lightweight keyword scanner as a safety net that runs before the AI call on incoming user messages. If high-risk keywords are present, set a flag that tells the AI to evaluate crisis risk explicitly. This catches cases where the AI might be misled by context.</div>
+        <div class="code-block">
+<span class="cm">// middleware/crisisScanner.js</span><br>
+<span class="ck">const</span> HIGH_RISK = [<span class="cs">'suicide'</span>, <span class="cs">'end my life'</span>,<br>
+&nbsp;&nbsp;<span class="cs">'hurt myself'</span>, <span class="cs">'can't go on'</span>];<br>
+<br>
+<span class="ck">function</span> <span class="cv">scanMessage</span>(text) {<br>
+&nbsp;&nbsp;<span class="ck">return</span> HIGH_RISK.some(k =><br>
+&nbsp;&nbsp;&nbsp;&nbsp;text.toLowerCase().includes(k));<br>
+}<br>
+<span class="cm">// If true, prepend crisis-eval instruction to system prompt</span>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P4-T3 · RATE LIMITING</span>
+        <div class="task-name">Per-user session rate limiting and abuse prevention</div>
+        <div class="task-desc">Implement rate limiting at the session level: max 60 messages per hour per user (configurable). Use a sliding window counter stored in Firestore or in-memory cache (Redis if available, otherwise Firestore). Return HTTP 429 with a retry-after header. Also implement a global per-IP limit for unauthenticated requests.</div>
+        <div class="steps">
+          <li>60 messages / hour / user — sliding window</li>
+          <li>5 sessions / day / user — prevents abuse</li>
+          <li>POST /admin/limits — admin endpoint to adjust limits per user tier</li>
+          <li>Return 429 with { retryAfter, message } — Flutter shows cooldown UI</li>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P4-T4 · CRISIS LOG</span>
+        <div class="task-name">Crisis event logging for safety audit trail</div>
+        <div class="task-desc">Every crisis flag must be logged for audit purposes — no message content, only metadata. The log is write-only from the app server and can only be read by admin service account. Store in /crisisLog/{uid}/{eventId}. This supports safety review without compromising user privacy.</div>
+        <div class="schema">
+crisisLog/{uid}/{eventId}: {<br>
+&nbsp;&nbsp;<span class="key">triggeredAt</span>: <span class="val">Timestamp</span>,<br>
+&nbsp;&nbsp;<span class="key">sessionId</span>: <span class="val">"string"</span>,<br>
+&nbsp;&nbsp;<span class="key">detectedBy</span>: <span class="val">"ai|keyword"</span>,<br>
+&nbsp;&nbsp;<span class="key">resolved</span>: <span class="val">false</span><br>
+&nbsp;&nbsp;<span class="comment">// NO message content stored</span><br>
+}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── PHASE 5 ─────────────────────────────────────────── -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">Phase 05</span>
+      <span class="phase-title">Encryption, Storage & Privacy</span>
+      <div class="phase-meta">
+        <span class="pill pill-time">After phase 1</span>
+        <span class="pill pill-p5">Security</span>
+      </div>
+    </div>
+
+    <div class="task-grid">
+
+      <div class="task-card">
+        <span class="task-id">P5-T1 · E2E ENCRYPTION</span>
+        <div class="task-name">Implement client-side E2E encryption for chat</div>
+        <div class="task-desc">The backend must never store plaintext messages. Architecture: Flutter generates a symmetric AES-256 key per user, encrypts it with the user's device key, and sends only the encrypted message payload to the backend. The backend stores the ciphertext. For multi-device, use a key exchange flow (generate key on first device, re-encrypt for second device on login).</div>
+        <div class="steps">
+          <li>Backend stores: { ciphertext, iv, sessionId, timestamp } — no plaintext</li>
+          <li>POST /messages — accepts encrypted payload, writes to Firestore as-is</li>
+          <li>GET /messages/{sessionId} — returns ciphertext, Flutter decrypts locally</li>
+          <li>Backend has zero knowledge of message content</li>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P5-T2 · CHAT STORAGE API</span>
+        <div class="task-name">Build complete chat history CRUD endpoints</div>
+        <div class="task-desc">Sessions and messages need full lifecycle management. Flutter needs to load history on app open, delete individual sessions, and export all data (GDPR compliance). All endpoints require Firebase Auth JWT validation via middleware.</div>
+        <div class="code-block">
+<span class="cm">// Routes</span><br>
+<span class="cn">POST</span>   <span class="cs">/sessions</span>            <span class="cm">// start new session</span><br>
+<span class="cn">GET</span>    <span class="cs">/sessions</span>            <span class="cm">// list all sessions</span><br>
+<span class="cn">GET</span>    <span class="cs">/sessions/:id/messages</span> <span class="cm">// paginated history</span><br>
+<span class="cn">DELETE</span> <span class="cs">/sessions/:id</span>        <span class="cm">// delete session</span><br>
+<span class="cn">GET</span>    <span class="cs">/export</span>              <span class="cm">// GDPR data export</span><br>
+<span class="cn">DELETE</span> <span class="cs">/account</span>            <span class="cm">// full account erasure</span>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P5-T3 · OFFLINE SYNC</span>
+        <div class="task-name">Offline queue and sync-on-reconnect mechanism</div>
+        <div class="task-desc">When Flutter is offline, messages are queued locally with a status of "pending." On reconnect, Flutter sends queued messages in order to POST /messages/batch. The backend processes them sequentially, generates AI responses, and returns them all. Each queued message includes a client_id so Flutter can match responses back to local messages.</div>
+        <div class="schema">
+<span class="comment">// Batch sync request body</span><br>
+{<br>
+&nbsp;&nbsp;<span class="key">messages</span>: [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">client_id</span>: <span class="val">"uuid"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">ciphertext</span>: <span class="val">"string"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">timestamp</span>: <span class="val">"ISO string"</span><br>
+&nbsp;&nbsp;}]<br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P5-T4 · AUTH MIDDLEWARE</span>
+        <div class="task-name">Firebase Auth JWT validation on all routes</div>
+        <div class="task-desc">Every API route must validate the Firebase Auth ID token from the Authorization header. Write a single verifyToken middleware that calls admin.auth().verifyIdToken(), attaches the decoded uid to req.user, and rejects with 401 on failure. Apply it globally — no route should be accessible without a valid token except health check.</div>
+        <div class="code-block">
+<span class="cm">// middleware/auth.js</span><br>
+<span class="ck">async function</span> <span class="cv">verifyToken</span>(req, res, next) {<br>
+&nbsp;&nbsp;<span class="ck">const</span> token = req.headers.authorization?.split(<span class="cs">' '</span>)[1];<br>
+&nbsp;&nbsp;<span class="ck">if</span> (!token) <span class="ck">return</span> res.status(<span class="cv">401</span>).json({error:<span class="cs">'No token'</span>});<br>
+&nbsp;&nbsp;<span class="ck">const</span> decoded = <span class="ck">await</span> admin.auth().verifyIdToken(token);<br>
+&nbsp;&nbsp;req.user = decoded; <span class="cm">// { uid, email, ... }</span><br>
+&nbsp;&nbsp;next();<br>
+}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── PHASE 6 ─────────────────────────────────────────── -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-num">Phase 06</span>
+      <span class="phase-title">Streaks, Gamification & Notifications</span>
+      <div class="phase-meta">
+        <span class="pill pill-time">Final phase</span>
+        <span class="pill pill-p6">Engagement</span>
+      </div>
+    </div>
+
+    <div class="task-grid">
+
+      <div class="task-card">
+        <span class="task-id">P6-T1 · STREAK ENGINE</span>
+        <div class="task-name">Daily streak tracking with grace period</div>
+        <div class="task-desc">A streak increments each day the user sends at least one message. Store in /users/{uid}/streaks/current. Include a 48-hour grace period (user can miss one day without losing streak) to reduce frustration. A Cloud Function runs nightly to evaluate and update streaks.</div>
+        <div class="schema">
+streaks/current: {<br>
+&nbsp;&nbsp;<span class="key">currentStreak</span>: <span class="val">14</span>,<br>
+&nbsp;&nbsp;<span class="key">longestStreak</span>: <span class="val">21</span>,<br>
+&nbsp;&nbsp;<span class="key">lastActiveDate</span>: <span class="val">"YYYY-MM-DD"</span>,<br>
+&nbsp;&nbsp;<span class="key">graceUsed</span>: <span class="val">false</span>,<br>
+&nbsp;&nbsp;<span class="key">totalDays</span>: <span class="val">45</span><br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P6-T2 · PUSH NOTIFICATIONS</span>
+        <div class="task-name">Daily check-in reminders via FCM</div>
+        <div class="task-desc">Use Firebase Cloud Messaging to send daily reminder notifications to users who haven't chatted that day. A Cloud Function runs at the user's preferred reminder time (stored in their profile). Also send a notification when a new daily insight is ready. Store FCM tokens in /users/{uid}/fcmTokens and handle token refresh.</div>
+        <div class="steps">
+          <li>Store FCM token on POST /auth/device — update on app launch</li>
+          <li>Scheduled Function: send reminders at user-set time (default 9am local)</li>
+          <li>Send insight-ready notification after daily insight generation</li>
+          <li>Handle token expiry — remove invalid tokens from Firestore</li>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P6-T3 · STREAK & STATS API</span>
+        <div class="task-name">Expose streak and engagement stats endpoints</div>
+        <div class="task-desc">Flutter needs to display streak info, badges, and total engagement stats on the profile screen. Build a single aggregated endpoint that returns all engagement data in one call to minimize round trips on app load.</div>
+        <div class="code-block">
+<span class="cm">// GET /stats  → returns:</span><br>
+{<br>
+&nbsp;&nbsp;<span class="cv">streak</span>: { current, longest, totalDays },<br>
+&nbsp;&nbsp;<span class="cv">sessions</span>: { total, thisWeek },<br>
+&nbsp;&nbsp;<span class="cv">topEmotion</span>: <span class="cs">"calm"</span>,<br>
+&nbsp;&nbsp;<span class="cv">insight</span>: { text, prompt }, <span class="cm">// latest daily insight</span><br>
+&nbsp;&nbsp;<span class="cv">badges</span>: [<span class="cs">"7-day-streak"</span>, <span class="cs">"first-session"</span>]<br>
+}
+        </div>
+      </div>
+
+      <div class="task-card">
+        <span class="task-id">P6-T4 · HEALTH CHECK & MONITORING</span>
+        <div class="task-name">Production readiness — health, logging, error tracking</div>
+        <div class="task-desc">Before going live, add operational infrastructure. A GET /health endpoint for uptime monitoring. Structured JSON logging on every request and AI call (duration, tokens used, userId hash). Error tracking via a service like Sentry. Firebase App Check to prevent unauthorized API access from non-app clients.</div>
+        <div class="steps">
+          <li>GET /health — returns { status: 'ok', uptime, version }</li>
+          <li>Request logger middleware — logs method, path, uid hash, duration</li>
+          <li>AI call logger — logs model, tokens_in, tokens_out, latency_ms</li>
+          <li>Enable Firebase App Check — blocks non-app API access</li>
+          <li>Set up Sentry (or equivalent) for unhandled exception tracking</li>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<div class="footer">
+  <span>AI Therapy App · Backend Roadmap · Node.js + Firebase</span>
+  <span>Chatbot complete · 6 phases remaining · Build phases 1 → 4 → 2 → 3 → 5 → 6</span>
+</div>
+
+</body>
+</html>

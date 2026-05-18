@@ -1,12 +1,95 @@
 import { jest } from '@jest/globals';
 
+// ── Mock Firebase so tests never hit real Firestore ──────────
+jest.unstable_mockModule('../src/config/firebase.js', () => {
+  const store = {};
+  const mockDb = {
+    collection: (colName) => ({
+      doc: (docId) => {
+        const key = `${colName}/${docId}`;
+        return {
+          get: jest.fn(async () => {
+            if (store[key]) {
+              return { exists: true, data: () => ({ ...store[key] }) };
+            }
+            return { exists: false, data: () => null };
+          }),
+          set: jest.fn(async (data) => { store[key] = { ...data }; }),
+          update: jest.fn(async (data) => {
+            if (!store[key]) throw new Error(`No document to update: ${key}`);
+            store[key] = { ...store[key], ...data };
+          }),
+          delete: jest.fn(async () => { delete store[key]; })
+        };
+      },
+      get: jest.fn(async () => {
+        const docs = Object.entries(store)
+          .filter(([k]) => k.startsWith(`${colName}/`))
+          .map(([k, v]) => ({ ref: { path: k }, data: () => v }));
+        return { docs };
+      })
+    }),
+    batch: () => {
+      const ops = [];
+      return {
+        delete: (ref) => ops.push(ref.path),
+        commit: jest.fn(async () => {
+          ops.forEach(path => { delete store[path]; });
+        })
+      };
+    }
+  };
+  return {
+    default: { firestore: () => mockDb },
+    db: mockDb
+  };
+});
+
 jest.unstable_mockModule('../src/llmClient.js', () => ({
   callLLM: jest.fn()
+}));
+jest.unstable_mockModule('../src/middleware/crisisHandler.js', () => ({
+  isUserInCooldown: jest.fn().mockReturnValue(false),
+  handleCrisis: jest.fn().mockImplementation(async response => response)
+}));
+jest.unstable_mockModule('../src/personaManager.js', () => ({
+  getPersonaById: jest.fn().mockResolvedValue({
+    id: 'compassionate-listener',
+    name: 'Dr. Amara',
+    style: 'Warm',
+    tone: 'Gentle',
+    personalityPrompt: 'You are Dr. Amara.',
+    initialMessage: 'Hello.'
+  }),
+  listPersonas: jest.fn().mockResolvedValue([])
 }));
 jest.unstable_mockModule('../src/vectorMemoryManager.js', () => ({
   storeMemory: jest.fn(),
   retrieveRelevantMemories: jest.fn().mockResolvedValue([]),
   clearAll: jest.fn()
+}));
+jest.unstable_mockModule('../src/services/moodService.js', () => ({
+  logMood: jest.fn()
+}));
+jest.unstable_mockModule('../src/services/memoryContext.js', () => ({
+  getSessionContext: jest.fn().mockResolvedValue('')
+}));
+jest.unstable_mockModule('../src/services/sessionSummarizer.js', () => ({
+  shouldSummarize: jest.fn().mockReturnValue(false),
+  summarizeAndStore: jest.fn().mockResolvedValue(null)
+}));
+jest.unstable_mockModule('../src/services/themeTracker.js', () => ({
+  updateThemes: jest.fn()
+}));
+jest.unstable_mockModule('../src/services/streakService.js', () => ({
+  recordActivity: jest.fn()
+}));
+jest.unstable_mockModule('../src/services/encryptedStorage.js', () => ({
+  storeEncryptedMessage: jest.fn().mockResolvedValue()
+}));
+jest.unstable_mockModule('../src/services/userService.js', () => ({
+  getUserBasicInfo: jest.fn().mockResolvedValue(null),
+  updateLastActive: jest.fn()
 }));
 
 describe('executionPipelinePhase3', () => {
@@ -72,6 +155,6 @@ describe('executionPipelinePhase3', () => {
 
     expect(llmClientMock).toHaveBeenCalledTimes(1);
     expect(vectorMemoryMock.storeMemory).not.toHaveBeenCalled();
-    expect(result.response).toBe('Hello there!');
+    expect(result.message).toBe('Hello there!');
   });
 });

@@ -6,6 +6,18 @@ jest.unstable_mockModule('../src/llmClient.js', () => ({
   callLLM: jest.fn(),
 }));
 
+jest.unstable_mockModule('../src/personaManager.js', () => ({
+  getPersonaById: jest.fn().mockResolvedValue({
+    id: 'compassionate-listener',
+    name: 'Dr. Amara',
+    style: 'Warm',
+    tone: 'Gentle',
+    personalityPrompt: 'You are Dr. Amara.',
+    initialMessage: 'Hello.'
+  }),
+  listPersonas: jest.fn().mockResolvedValue([])
+}));
+
 describe('executionPipeline', () => {
   let executionPipeline;
   let llmClientMock;
@@ -21,9 +33,9 @@ describe('executionPipeline', () => {
     memoryManager = await import('../src/memoryManager.js');
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    memoryManager.clearAll();
+    await memoryManager.clearAll();
   });
 
   test('handles crisis override (short-circuits)', async () => {
@@ -43,7 +55,7 @@ describe('executionPipeline', () => {
     // LLM should NOT be called
     expect(llmClientMock).not.toHaveBeenCalled();
     
-    expect(result.response).toBe('Crisis message here');
+    expect(result.response.message).toBe('Crisis message here');
     expect(result.isHighRisk).toBe(true);
     expect(result.responseUnsafe).toBe(false); // The pre-canned message is safe
     expect(result.metadata.modelUsed).toBe('none');
@@ -77,16 +89,16 @@ describe('executionPipeline', () => {
     expect(passedPrompt).toContain('SYSTEM_PROMPT_BASE');
     expect(passedPrompt).toContain('[THERAPIST IDENTITY]');
 
-    
-    expect(result.response).toBe('That is wonderful to hear.');
+    expect(result.response.message).toBe('That is wonderful to hear.');
     expect(result.responseUnsafe).toBe(false);
     expect(result.metadata.modelUsed).toBe('mistral-mock');
     expect(result.metadata.wasFallback).toBe(false);
 
     // Memory was stored
-    expect(memoryManager.getRecentHistory('session-happy')).toContain('User: I feel okay');
-    expect(memoryManager.getRecentHistory('session-happy')).toContain('Assistant: That is wonderful to hear.');
-  });
+    const history = await memoryManager.getRecentHistory('session-happy');
+    expect(history).toContain('User: I feel okay');
+    expect(history).toContain('Assistant: That is wonderful to hear.');
+  }, 30_000);
 
   test('gracefully handles LLM failure', async () => {
     const phase1Output = {
@@ -105,8 +117,8 @@ describe('executionPipeline', () => {
 
     expect(result.metadata.wasFallback).toBe(true);
     expect(result.metadata.error).toBe('Network error');
-    expect(result.response).toContain('having a moment of difficulty');
-  });
+    expect(result.response.message).toContain('having a moment of difficulty');
+  }, 15_000);
 
   test('handles unsafe LLM response by returning fallback', async () => {
     const phase1Output = {
@@ -128,8 +140,8 @@ describe('executionPipeline', () => {
 
     expect(result.responseUnsafe).toBe(true);
     expect(result.metadata.wasFallback).toBe(true);
-    expect(result.response).not.toContain('give up');
-  });
+    expect(result.response.message).not.toContain('give up');
+  }, 15_000);
   
   test('rejects persona change without session reset', async () => {
     const phase1Output = {
@@ -160,6 +172,6 @@ describe('executionPipeline', () => {
     } catch(err) {
         expect(err.message).toMatch(/Persona change rejected/);
     }
-  });
+  }, 30_000);
 
 });

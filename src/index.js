@@ -11,7 +11,7 @@ export { execute as executePipeline } from './executionPipeline.js';
 // Individual modules — for granular / advanced usage
 export { sanitize } from './inputSanitizer.js';
 export { detect as detectIntent } from './intentDetector.js';
-export { check as checkSafety } from './safetyChecker.js';
+export { check as checkSafety } from './middleware/crisisScanner.js';
 export { build as buildSystemPrompt, getAvailableIntents } from './systemPromptBuilder.js';
 
 // Phase 2 Modules

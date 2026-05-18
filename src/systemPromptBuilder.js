@@ -37,28 +37,38 @@ const BOUNDARIES_SECTION = `## Important Boundaries
 - Stay emotionally supportive but maintain healthy conversational boundaries.
 - If you don't know something, be honest about it with compassion.`;
 
+const JSON_FORMAT_SECTION = `## Output Format
+You MUST respond ONLY with a valid JSON object. Do not include any text before or after the JSON.
+The JSON object MUST follow this exact structure:
+{
+  "message": "Your empathetic response here",
+  "emotion": "one of: happy, calm, anxious, sad, stressed",
+  "intensity": 0.0 to 1.0 (float),
+  "stress_level": 0.0 to 1.0 (float),
+  "crisis": true or false,
+  "suggestions": ["suggestion 1", "suggestion 2"],
+  "mood_tag": "short descriptive tag"
+}`;
+
 // ─── Intent-Adaptive Preambles ───────────────────────────────
 // These are added before the main prompt to gear the LLM's
 // emotional posture toward the user's detected state.
 
 const INTENT_PREAMBLES = {
+  happy: `## Emotional Context
+The person you're speaking with appears to be in a positive, happy, or hopeful state. Celebrate their progress, validate their joy, and encourage their momentum. Reflect their strength and resilience back to them. Help them explore what's contributing to these positive feelings so they can sustain them. Be warm and enthusiastic without being over-the-top.`,
+
+  calm: `## Emotional Context
+The person you're speaking with appears to be feeling relatively calm, quiet, or grounded. Maintain a relaxed, steady presence. Offer gentle, unhurried space for reflection. Validate their stability and sense of peace, helping them lean into this state of tranquility.`,
+
   anxious: `## Emotional Context
-The person you're speaking with appears to be experiencing anxiety or worry. Approach them with extra gentleness and calm. Use grounding language — short, reassuring sentences. Help them slow down their thoughts. Remind them they are safe in this moment. Avoid asking too many questions at once, as this may increase their overwhelm.`,
+The person you're speaking with appears to be experiencing anxiety, confusion, or worry. Approach them with extra gentleness and calm. Use grounding language — short, reassuring sentences. Help them slow down their thoughts. Remind them they are safe in this moment. Avoid asking too many questions at once, as this may increase their overwhelm.`,
 
   sad: `## Emotional Context
-The person you're speaking with appears to be experiencing sadness or low mood. Be especially tender and validating. Let them know it's completely okay to feel this way. Use soft, compassionate language. Don't try to "fix" their sadness — instead, sit with them in it. Acknowledge the weight of what they're carrying. Offer gentle, unhurried space for them to share.`,
+The person you're speaking with appears to be experiencing sadness, grief, or low mood. Be especially tender and validating. Let them know it's completely okay to feel this way. Use soft, compassionate language. Don't try to "fix" their sadness — instead, sit with them in it. Acknowledge the weight of what they're carrying. Offer gentle, unhurried space for them to share.`,
 
-  angry: `## Emotional Context
-The person you're speaking with appears to be experiencing anger or frustration. Acknowledge their anger as valid and understandable — don't try to calm them down immediately. Let them express themselves. Use steady, grounded language that shows you hear them without being dismissive. Help them explore what's underneath the anger when they're ready.`,
-
-  hopeful: `## Emotional Context
-The person you're speaking with appears to be in a positive or hopeful state. Celebrate their progress and encourage their momentum. Reflect their strength and resilience back to them. Help them explore what's contributing to these positive feelings so they can sustain them. Be warm and enthusiastic without being over-the-top.`,
-
-  confused: `## Emotional Context
-The person you're speaking with appears to be feeling confused or uncertain. Help them organize their thoughts without rushing them. Use clear, simple language. Ask one question at a time. Help them break down complex feelings into smaller, more manageable pieces. Validate that confusion is a natural part of processing difficult experiences.`,
-
-  neutral: `## Emotional Context
-Approach this conversation with open curiosity and warmth. Follow the person's lead — let them set the emotional tone. Be attentive to subtle cues that might reveal how they're really feeling beneath the surface.`,
+  stressed: `## Emotional Context
+The person you're speaking with appears to be experiencing stress, anger, pressure, or frustration. Acknowledge their stress as completely valid and understandable — don't try to brush it off or calm them down immediately. Let them express themselves fully. Use steady, grounded language that shows you hear them without being dismissive. Help them explore what's underneath the stress or pressure when they're ready.`,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -68,11 +78,18 @@ Approach this conversation with open curiosity and warmth. Follow the person's l
 /**
  * Build a structured, intent-adaptive system prompt.
  *
- * @param {string} [detectedIntent="neutral"] — the emotional intent detected in the user's input
+ * @param {string} [detectedIntent="calm"] — the emotional intent detected in the user's input
  * @returns {string} — the complete system prompt
  */
-export function build(detectedIntent = 'neutral') {
-  const intent = INTENT_PREAMBLES[detectedIntent] ? detectedIntent : 'neutral';
+export function build(detectedIntent = 'calm') {
+  let intent = detectedIntent;
+  if (!INTENT_PREAMBLES[intent]) {
+    // Map unexpected/legacy intents safely
+    if (intent === 'hopeful') intent = 'happy';
+    else if (intent === 'angry') intent = 'stressed';
+    else if (intent === 'confused' || intent === 'neutral') intent = 'calm';
+    else intent = 'calm';
+  }
   const preamble = INTENT_PREAMBLES[intent];
 
   const sections = [
@@ -87,6 +104,8 @@ export function build(detectedIntent = 'neutral') {
     TONE_SECTION,
     '',
     BOUNDARIES_SECTION,
+    '',
+    JSON_FORMAT_SECTION
   ];
 
   return sections.join('\n');

@@ -74,8 +74,21 @@ export async function execute({
 
   // ─── Step 1: Crisis Override Check ─────────────────────────
   if (phase1Output.nextStep === 'crisis_override') {
+    const defaultCrisisMessage = "I hear you, and I want you to know that you are not alone. Please reach out to a professional or someone you trust who can support you right now. Your safety is the absolute priority.";
+    const responseMessage = phase1Output.systemPrompt && !phase1Output.systemPrompt.includes('URGENT CRISIS EVALUATION') 
+      ? phase1Output.systemPrompt 
+      : defaultCrisisMessage;
+
     return {
-      response: phase1Output.systemPrompt, // crisis response from Phase 1
+      response: {
+        message: responseMessage,
+        emotion: "neutral",
+        intensity: 0.5,
+        stress_level: 0.5,
+        crisis: true,
+        suggestions: ["Call 988", "Text HOME to 741741"],
+        mood_tag: "crisis_override"
+      },
       therapistId,
       detectedIntent: phase1Output.detectedIntent || 'neutral',
       isHighRisk: true,
@@ -91,13 +104,13 @@ export async function execute({
   // ─── Step 2: Session Management + Persona Locking ──────────
   // getOrCreateSession locks the persona on first call.
   // Throws if a different therapistId is passed for existing session.
-  getOrCreateSession(sessionId, therapistId);
+  await getOrCreateSession(sessionId, therapistId);
 
   // Validate persona exists
-  const persona = getPersonaById(therapistId);
+  const persona = await getPersonaById(therapistId);
 
   // ─── Step 3: Retrieve Memory ───────────────────────────────
-  const recentHistory = getRecentHistory(sessionId);
+  const recentHistory = await getRecentHistory(sessionId);
 
   // ─── Step 4: Assemble Prompt ───────────────────────────────
   const assembledPrompt = assemblePrompt({
@@ -122,10 +135,15 @@ export async function execute({
   } catch (error) {
     // LLM failure → return a graceful fallback, not a crash.
     return {
-      response:
-        'I\'m here and I want to help, but I\'m having a moment of difficulty. ' +
-        'Could you share that with me again? I want to make sure I give you ' +
-        'the thoughtful response you deserve.',
+      response: {
+        message: 'I\'m here and I want to help, but I\'m having a moment of difficulty. Could you share that with me again? I want to make sure I give you the thoughtful response you deserve.',
+        emotion: "neutral",
+        intensity: 0.5,
+        stress_level: 0.5,
+        crisis: false,
+        suggestions: [],
+        mood_tag: "fallback_error"
+      },
       therapistId,
       detectedIntent: phase1Output.detectedIntent || 'neutral',
       isHighRisk: phase1Output.isHighRisk || false,
@@ -152,10 +170,10 @@ export async function execute({
   // ─── Step 9: Store Messages in Memory ──────────────────────
   // Store the user's original input
   if (phase1Output.cleanedInput && phase1Output.cleanedInput.trim().length > 0) {
-    appendMessage(sessionId, 'user', phase1Output.cleanedInput);
+    await appendMessage(sessionId, 'user', phase1Output.cleanedInput);
   }
   // Store the assistant's response
-  appendMessage(sessionId, 'assistant', processed.response);
+  await appendMessage(sessionId, 'assistant', processed.response.message || processed.response);
 
   // ─── Step 10: Return Structured Output ─────────────────────
   return {

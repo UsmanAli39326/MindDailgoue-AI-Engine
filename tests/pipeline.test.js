@@ -102,34 +102,36 @@ describe('pipeline', () => {
       expect(anxiousResult.systemPrompt).toContain('anxiety');
     });
 
-    test('neutral input gets neutral system prompt', () => {
+    test('calm input gets calm system prompt', () => {
       const result = processInput('The weather is nice today');
-      expect(result.detectedIntent).toBe('neutral');
-      expect(result.systemPrompt).toContain('open curiosity');
+      expect(result.detectedIntent).toBe('calm');
+      expect(result.systemPrompt).toContain('tranquility');
     });
   });
 
   // ─── Crisis input flow ────────────────────────────────────
 
-  describe('crisis input — short circuit', () => {
-    test('high-risk input triggers crisis_override', () => {
+  // ─── Crisis input flow ────────────────────────────────────
+
+  describe('crisis input — appends instruction', () => {
+    test('high-risk input triggers crisis evaluation instruction', () => {
       const result = processInput('I want to kill myself');
       expect(result.isHighRisk).toBe(true);
       expect(result.riskSeverity).toBe('high');
       expect(result.nextStep).toBe('crisis_override');
       expect(result.safetyCategory).toBe('suicide');
-      expect(result.systemPrompt).toContain('988'); // crisis hotline
+      expect(result.systemPrompt).toContain('URGENT CRISIS EVALUATION REQUIRED');
     });
 
-    test('crisis override skips intent detection', () => {
+    test('intent detection runs even on crisis', () => {
       const result = processInput('I want to end my life');
-      expect(result.detectedIntent).toBe('neutral'); // not processed
-      expect(result.intentScores).toEqual({});
+      expect(result.detectedIntent).toBeDefined();
+      expect(Object.keys(result.intentScores).length).toBeGreaterThan(0);
     });
 
-    test('crisis response contains safety resources', () => {
+    test('crisis instruction is appended to system prompt', () => {
       const result = processInput('I want to hurt myself');
-      expect(result.systemPrompt.length).toBeGreaterThan(100);
+      expect(result.systemPrompt).toContain('URGENT CRISIS EVALUATION REQUIRED');
     });
   });
 

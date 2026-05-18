@@ -13,78 +13,11 @@
 //   negations — patterns that NEGATE the intent when they precede a keyword
 
 const INTENT_LEXICON = {
-  anxious: {
+  happy: {
     keywords: [
-      'anxious', 'anxiety', 'worried', 'nervous', 'panic',
-      'restless', 'uneasy', 'tense', 'dread', 'overthinking',
-      'stressed', 'overwhelmed', 'fearful', 'apprehensive',
-    ],
-    phrases: [
-      'can\'t stop worrying',
-      'feel on edge',
-      'heart is racing',
-      'can\'t calm down',
-      'mind won\'t stop',
-      'constant worry',
-      'feeling overwhelmed',
-      'can\'t breathe',
-      'panic attack',
-      'so stressed out',
-      'freaking out',
-      'scared of everything',
-      'can\'t relax',
-      'always on edge',
-    ],
-  },
-
-  sad: {
-    keywords: [
-      'sad', 'depressed', 'hopeless', 'lonely', 'miserable',
-      'empty', 'numb', 'crying', 'grief', 'heartbroken',
-      'devastated', 'gloomy', 'despair', 'sorrow', 'melancholy',
-      'worthless', 'dejected',
-    ],
-    phrases: [
-      'feel like crying',
-      'don\'t see the point',
-      'nothing matters',
-      'feel so alone',
-      'can\'t stop crying',
-      'feel empty inside',
-      'lost all hope',
-      'everything feels heavy',
-      'no one cares',
-      'feel like a burden',
-      'don\'t feel anything',
-      'life feels meaningless',
-      'feel so low',
-    ],
-  },
-
-  angry: {
-    keywords: [
-      'angry', 'furious', 'frustrated', 'irritated', 'rage',
-      'resentful', 'bitter', 'annoyed', 'hostile', 'mad',
-      'livid', 'outraged', 'agitated', 'infuriated',
-    ],
-    phrases: [
-      'makes me so angry',
-      'can\'t take it anymore',
-      'want to scream',
-      'sick of this',
-      'fed up with',
-      'losing my patience',
-      'blood is boiling',
-      'had enough',
-      'drives me crazy',
-      'pissed off',
-      'want to explode',
-    ],
-  },
-
-  hopeful: {
-    keywords: [
-      'hopeful', 'optimistic', 'grateful', 'excited', 'motivated',
+      'happy', 'joy', 'joyful', 'cheerful', 'glad', 'delighted',
+      'excited', 'proud', 'pleased', 'satisfied', 'content',
+      'hopeful', 'optimistic', 'grateful', 'motivated',
       'inspired', 'confident', 'positive', 'encouraged', 'relieved',
       'thankful', 'eager', 'determined', 'looking forward',
     ],
@@ -100,16 +33,63 @@ const INTENT_LEXICON = {
       'proud of myself',
       'feeling stronger',
       'ready to move on',
+      'i feel happy',
+      'so happy',
+      'happy day',
+      'feeling good',
+      'so glad',
     ],
   },
 
-  confused: {
+  calm: {
     keywords: [
-      'confused', 'lost', 'unsure', 'uncertain', 'torn',
-      'conflicted', 'stuck', 'puzzled', 'mixed', 'indecisive',
-      'overwhelmed', 'disoriented', 'bewildered',
+      'calm', 'peaceful', 'peace', 'relaxed', 'relaxing', 'serene',
+      'tranquil', 'placid', 'composed', 'mindful', 'grounded',
+      'still', 'quiet', 'rested', 'comfortable', 'cozy',
     ],
     phrases: [
+      'feel at peace',
+      'can relax now',
+      'mind is quiet',
+      'breathing slowly',
+      'feeling grounded',
+      'take it easy',
+      'feel comfortable',
+      'feeling relaxed',
+    ],
+  },
+
+  anxious: {
+    keywords: [
+      'anxious', 'anxiety', 'worried', 'nervous', 'panic',
+      'restless', 'uneasy', 'tense', 'dread', 'overthinking',
+      'fearful', 'apprehensive',
+      'terrifying', 'terrified', 'terror', 'scared', 'afraid',
+      'fear', 'frightened', 'freaking',
+      'unsettling', 'confused', 'lost', 'unsure', 'uncertain', 'torn',
+      'conflicted', 'stuck', 'puzzled', 'mixed', 'indecisive',
+      'disoriented', 'bewildered', 'unsettled',
+    ],
+    phrases: [
+      'can\'t stop worrying',
+      'feel on edge',
+      'heart is racing',
+      'can\'t calm down',
+      'mind won\'t stop',
+      'constant worry',
+      'feeling overwhelmed',
+      'can\'t breathe',
+      'panic attack',
+      'freaking out',
+      'scared of everything',
+      'can\'t relax',
+      'always on edge',
+      'whats happening to me',
+      'what is happening to me',
+      'sometimes its terrifying',
+      'wave of fear',
+      'dont know whats happening',
+      'don\'t know what\'s happening',
       'don\'t know what to do',
       'feel so lost',
       'can\'t figure out',
@@ -121,6 +101,66 @@ const INTENT_LEXICON = {
       'can\'t make sense',
       'torn between',
       'don\'t know anymore',
+    ],
+  },
+
+  sad: {
+    keywords: [
+      'sad', 'depressed', 'hopeless', 'lonely', 'miserable',
+      'empty', 'numb', 'crying', 'grief', 'heartbroken',
+      'devastated', 'gloomy', 'despair', 'sorrow', 'melancholy',
+      'worthless', 'dejected', 'betrayed', 'betray', 'betrayal',
+      'hurt', 'rejected', 'abandoned', 'pain',
+    ],
+    phrases: [
+      'feel like crying',
+      'don\'t see the point',
+      'nothing matters',
+      'feel so alone',
+      'can\'t stop crying',
+      'feel empty inside',
+      'lost all hope',
+      'everything feels heavy',
+      'no one cares',
+      'feel like a burden',
+      'don\'t feel anything',
+      'life feels meaningless',
+      'feel so low',
+      'friend betrayed me',
+      'betrayed me',
+      'feel betrayed',
+    ],
+  },
+
+  stressed: {
+    keywords: [
+      'stressed', 'stress', 'stressful', 'overwhelmed', 'overwhelming',
+      'exhausted', 'tired', 'burned', 'burnout', 'pressure', 'burdened',
+      'angry', 'furious', 'frustrated', 'irritated', 'rage',
+      'resentful', 'bitter', 'annoyed', 'hostile', 'mad',
+      'livid', 'outraged', 'agitated', 'infuriated', 'stupid',
+      'nag', 'nagging', 'nagged', 'hate', 'sucks', 'shitty',
+      'crap', 'hell', 'screwed', 'unfair', 'fucking', 'bitch',
+      'asshole', 'pissed', 'backstabbed', 'cheated', 'liar', 'lie', 'lied',
+    ],
+    phrases: [
+      'so stressed out',
+      'too much pressure',
+      'feeling overwhelmed',
+      'can\'t take it anymore',
+      'want to scream',
+      'sick of this',
+      'fed up with',
+      'losing my patience',
+      'blood is boiling',
+      'had enough',
+      'drives me crazy',
+      'pissed off',
+      'want to explode',
+      'makes me so angry',
+      'betrayed me',
+      'cheat on me',
+      'lied to me',
     ],
   },
 };
@@ -246,7 +286,7 @@ function deriveConfidence(score) {
 export function detect(cleanedInput) {
   if (typeof cleanedInput !== 'string' || cleanedInput.trim().length === 0) {
     return {
-      intent: 'neutral',
+      intent: 'calm',
       confidence: 'low',
       scores: {},
     };
@@ -262,7 +302,7 @@ export function detect(cleanedInput) {
   }
 
   // Find the winning intent
-  let topIntent = 'neutral';
+  let topIntent = 'calm';
   let topScore = 0;
 
   for (const [intentName, score] of Object.entries(scores)) {
@@ -272,10 +312,10 @@ export function detect(cleanedInput) {
     }
   }
 
-  // If no intent scored above zero, fall back to neutral
+  // If no intent scored above zero, fall back to calm
   if (topScore === 0) {
     return {
-      intent: 'neutral',
+      intent: 'calm',
       confidence: 'low',
       scores,
     };

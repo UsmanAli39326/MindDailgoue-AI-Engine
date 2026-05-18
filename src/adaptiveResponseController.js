@@ -9,13 +9,20 @@ export function getAdaptiveInstructions(userProfile) {
 
   const instructions = [];
 
+  let dominant = userProfile.dominantEmotion || 'calm';
+  if (dominant === 'hopeful') dominant = 'happy';
+  else if (dominant === 'angry') dominant = 'stressed';
+  else if (dominant === 'confused' || dominant === 'neutral') dominant = 'calm';
+
   // Respond to dominant emotion
-  if (userProfile.dominantEmotion === 'anxious') {
+  if (dominant === 'anxious') {
     instructions.push('- Use a slightly slower, more reassuring conversational pace.');
-  } else if (userProfile.dominantEmotion === 'angry') {
-    instructions.push('- Prioritize profound validation of their frustration before exploring solutions.');
-  } else if (userProfile.dominantEmotion === 'sad') {
+  } else if (dominant === 'stressed') {
+    instructions.push('- Prioritize profound validation of their stress and frustration before exploring solutions.');
+  } else if (dominant === 'sad') {
     instructions.push('- Emphasize warmth, presence, and safe holding of their grief.');
+  } else if (dominant === 'happy') {
+    instructions.push('- Match their positive energy with warm, enthusiastic support and celebrate their progress.');
   }
 
   // Acknowledge stated tone preferences

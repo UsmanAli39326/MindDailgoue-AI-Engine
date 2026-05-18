@@ -7,13 +7,13 @@ describe('userProfileManager', () => {
 
   test('creates empty profile on get', () => {
     const profile = getProfile('session1');
-    expect(profile.dominantEmotion).toBe('neutral');
+    expect(profile.dominantEmotion).toBe('calm');
     expect(profile.recurringThemes).toEqual([]);
     expect(profile.tonePreference).toBeNull();
   });
 
   test('calculates dominant emotion incrementally (weighted average)', () => {
-    // Session starts neutral
+    // Session starts calm
     let profile = getProfile('session2');
     
     // Add sad
@@ -55,3 +55,4 @@ describe('userProfileManager', () => {
     expect(getProfile('toneSession').tonePreference).toBe('direct');
   });
 });
+

@@ -1,21 +1,19 @@
 // ─────────────────────────────────────────────────────────────
 // memoryManager.js
-// In-memory short-term session storage with persona locking
-// and bounded message history.
-// Stateful module — maintains session state in a Map.
+// Persistent short-term session storage with persona locking
+// and bounded message history using Firestore.
+// Fully supports stateless distributed horizontal scaling.
 // ─────────────────────────────────────────────────────────────
+
+import { db } from './config/firebase.js';
 
 // ─── Configuration ──────────────────────────────────────────
 
 const MAX_MESSAGES_PER_SESSION = 50;  // hard cap — prevents unbounded growth
 const DEFAULT_RECENT_COUNT = 10;      // default for getRecentHistory
 
-// ─── Session Store ──────────────────────────────────────────
-// Shape: Map<sessionId, { therapistId: string, messages: Message[] }>
-// Message: { role: 'user' | 'assistant', text: string, timestamp: string }
-
-/** @type {Map<string, { therapistId: string, messages: Array<{ role: string, text: string, timestamp: string }> }>} */
-const sessionStore = new Map();
+// Stateful fallback / write-through cache for low-latency retrieval
+const ramCache = new Map();
 
 // ─────────────────────────────────────────────────────────────
 // Internal helpers
@@ -40,7 +38,7 @@ function enforceMessageCap(messages) {
  * @returns {string}
  */
 function formatHistory(messages) {
-  if (messages.length === 0) {
+  if (!messages || messages.length === 0) {
     return 'No previous conversation history.';
   }
 
@@ -57,15 +55,15 @@ function formatHistory(messages) {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Get or create a session. Locks the therapistId on first creation.
+ * Get or create a session in Firestore. Locks the therapistId on first creation.
  * Throws if a different therapistId is passed for an existing session.
  *
  * @param {string} sessionId
  * @param {string} therapistId
- * @returns {{ therapistId: string, messages: Array }}
+ * @returns {Promise<{ therapistId: string, messages: Array }>}
  * @throws {Error} if therapistId mismatch on existing session
  */
-export function getOrCreateSession(sessionId, therapistId) {
+export async function getOrCreateSession(sessionId, therapistId) {
   if (typeof sessionId !== 'string' || sessionId.trim().length === 0) {
     throw new Error('sessionId must be a non-empty string.');
   }
@@ -73,8 +71,9 @@ export function getOrCreateSession(sessionId, therapistId) {
     throw new Error('therapistId must be a non-empty string.');
   }
 
-  if (sessionStore.has(sessionId)) {
-    const session = sessionStore.get(sessionId);
+  // Check write-through cache first
+  if (ramCache.has(sessionId)) {
+    const session = ramCache.get(sessionId);
     if (session.therapistId !== therapistId) {
       throw new Error(
         `Persona change rejected. Session "${sessionId}" is locked to ` +
@@ -84,13 +83,38 @@ export function getOrCreateSession(sessionId, therapistId) {
     return session;
   }
 
-  // Create new session with locked persona
-  const session = {
+  if (!db) {
+    console.warn('[MEMORY MANAGER] Firestore database not available. Using local RAM.');
+    const localSession = { therapistId, messages: [] };
+    ramCache.set(sessionId, localSession);
+    return localSession;
+  }
+
+  const docRef = db.collection('sessions').doc(sessionId);
+  const doc = await docRef.get();
+
+  if (doc.exists) {
+    const session = doc.data();
+    if (session.therapistId !== therapistId) {
+      throw new Error(
+        `Persona change rejected. Session "${sessionId}" is locked to ` +
+        `therapist "${session.therapistId}". Use resetSession() to change persona.`
+      );
+    }
+    ramCache.set(sessionId, session);
+    return session;
+  }
+
+  // Create new session in Firestore
+  const newSession = {
     therapistId,
     messages: [],
+    createdAt: new Date().toISOString(),
   };
-  sessionStore.set(sessionId, session);
-  return session;
+
+  await docRef.set(newSession);
+  ramCache.set(sessionId, newSession);
+  return newSession;
 }
 
 /**
@@ -102,10 +126,7 @@ export function getOrCreateSession(sessionId, therapistId) {
  * @param {string} text
  * @throws {Error} if session does not exist
  */
-export function appendMessage(sessionId, role, text) {
-  if (!sessionStore.has(sessionId)) {
-    throw new Error(`Session "${sessionId}" does not exist. Call getOrCreateSession first.`);
-  }
+export async function appendMessage(sessionId, role, text) {
   if (role !== 'user' && role !== 'assistant') {
     throw new Error('Role must be "user" or "assistant".');
   }
@@ -113,7 +134,21 @@ export function appendMessage(sessionId, role, text) {
     throw new Error('Message text must be a non-empty string.');
   }
 
-  const session = sessionStore.get(sessionId);
+  let session = ramCache.get(sessionId);
+
+  if (!session && db) {
+    const docRef = db.collection('sessions').doc(sessionId);
+    const doc = await docRef.get();
+    if (doc.exists) {
+      session = doc.data();
+      ramCache.set(sessionId, session);
+    }
+  }
+
+  if (!session) {
+    throw new Error(`Session "${sessionId}" does not exist. Call getOrCreateSession first.`);
+  }
+
   session.messages.push({
     role,
     text,
@@ -122,6 +157,13 @@ export function appendMessage(sessionId, role, text) {
 
   // Enforce hard cap
   session.messages = enforceMessageCap(session.messages);
+
+  if (db) {
+    const docRef = db.collection('sessions').doc(sessionId);
+    await docRef.update({
+      messages: session.messages
+    });
+  }
 }
 
 /**
@@ -130,14 +172,24 @@ export function appendMessage(sessionId, role, text) {
  *
  * @param {string} sessionId
  * @param {number} [maxMessages=10] — number of recent messages to retrieve
- * @returns {string} — formatted conversation history
+ * @returns {Promise<string>} — formatted conversation history
  */
-export function getRecentHistory(sessionId, maxMessages = DEFAULT_RECENT_COUNT) {
-  if (!sessionStore.has(sessionId)) {
+export async function getRecentHistory(sessionId, maxMessages = DEFAULT_RECENT_COUNT) {
+  let session = ramCache.get(sessionId);
+
+  if (!session && db) {
+    const docRef = db.collection('sessions').doc(sessionId);
+    const doc = await docRef.get();
+    if (doc.exists) {
+      session = doc.data();
+      ramCache.set(sessionId, session);
+    }
+  }
+
+  if (!session) {
     return 'No previous conversation history.';
   }
 
-  const session = sessionStore.get(sessionId);
   const recent = session.messages.slice(-maxMessages);
   return formatHistory(recent);
 }
@@ -146,13 +198,24 @@ export function getRecentHistory(sessionId, maxMessages = DEFAULT_RECENT_COUNT) 
  * Get the locked therapist ID for a session.
  *
  * @param {string} sessionId
- * @returns {string | null}
+ * @returns {Promise<string | null>}
  */
-export function getSessionTherapistId(sessionId) {
-  if (!sessionStore.has(sessionId)) {
+export async function getSessionTherapistId(sessionId) {
+  let session = ramCache.get(sessionId);
+
+  if (!session && db) {
+    const docRef = db.collection('sessions').doc(sessionId);
+    const doc = await docRef.get();
+    if (doc.exists) {
+      session = doc.data();
+      ramCache.set(sessionId, session);
+    }
+  }
+
+  if (!session) {
     return null;
   }
-  return sessionStore.get(sessionId).therapistId;
+  return session.therapistId;
 }
 
 /**
@@ -160,20 +223,29 @@ export function getSessionTherapistId(sessionId) {
  *
  * @param {string} sessionId
  */
-export function resetSession(sessionId) {
-  sessionStore.delete(sessionId);
+export async function resetSession(sessionId) {
+  ramCache.delete(sessionId);
+  if (db) {
+    await db.collection('sessions').doc(sessionId).delete().catch(() => {});
+  }
 }
 
 /**
  * Clear all sessions (for testing).
  */
-export function clearAll() {
-  sessionStore.clear();
+export async function clearAll() {
+  ramCache.clear();
+  if (db) {
+    const snapshot = await db.collection('sessions').get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit().catch(() => {});
+  }
 }
 
 // Export internals for unit testing
 export const _internals = {
-  sessionStore,
+  sessionStore: ramCache,
   enforceMessageCap,
   formatHistory,
   MAX_MESSAGES_PER_SESSION,

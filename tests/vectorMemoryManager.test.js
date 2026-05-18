@@ -42,8 +42,8 @@ describe('vectorMemoryManager', () => {
         json: async () => ({ embedding: dummyEmbedding2 })
       });
 
-      await storeMemory('session1', 'I love apples', { intent: 'hopeful' });
-      await storeMemory('session1', 'I hate bananas', { intent: 'angry' });
+      await storeMemory('session1', 'I love apples', { intent: 'happy' });
+      await storeMemory('session1', 'I hate bananas', { intent: 'stressed' });
 
       // Mock query embedding matching apples closely
       mockFetch.mockResolvedValueOnce({
@@ -55,7 +55,7 @@ describe('vectorMemoryManager', () => {
       
       expect(results.length).toBe(1);
       expect(results[0].text).toBe('I love apples');
-      expect(results[0].metadata.intent).toBe('hopeful');
+      expect(results[0].metadata.intent).toBe('happy');
       expect(results[0].similarity).toBeGreaterThan(0.75);
     });
 

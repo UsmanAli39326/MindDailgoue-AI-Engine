@@ -5,8 +5,8 @@ describe('adaptiveResponseController', () => {
     expect(getAdaptiveInstructions(null)).toBe('');
   });
 
-  test('returns empty if plain neutral profile', () => {
-    expect(getAdaptiveInstructions({ dominantEmotion: 'neutral' })).toBe('');
+  test('returns empty if plain calm profile', () => {
+    expect(getAdaptiveInstructions({ dominantEmotion: 'calm' })).toBe('');
   });
 
   test('adapts to anxious emotion', () => {
@@ -15,8 +15,8 @@ describe('adaptiveResponseController', () => {
     expect(res).toContain('slower, more reassuring conversational pace');
   });
 
-  test('adapts to angry emotion', () => {
-    const res = getAdaptiveInstructions({ dominantEmotion: 'angry' });
+  test('adapts to stressed emotion', () => {
+    const res = getAdaptiveInstructions({ dominantEmotion: 'stressed' });
     expect(res).toContain('profound validation');
   });
 
@@ -26,7 +26,7 @@ describe('adaptiveResponseController', () => {
   });
 
   test('includes tone preference', () => {
-    const res = getAdaptiveInstructions({ dominantEmotion: 'neutral', tonePreference: 'direct' });
+    const res = getAdaptiveInstructions({ dominantEmotion: 'calm', tonePreference: 'direct' });
     expect(res).toContain('more structure and actionable framing');
   });
 
@@ -35,3 +35,4 @@ describe('adaptiveResponseController', () => {
     expect(res).toContain('WITHOUT overriding your primary Therapist Identity');
   });
 });
+

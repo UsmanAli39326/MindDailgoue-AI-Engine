@@ -10,7 +10,7 @@ describe('responsePostProcessor', () => {
       const result = postProcess({ rawResponse: raw, safetyResult });
       
       expect(result.wasFallback).toBe(false);
-      expect(result.response).toBe('I hear you completely.');
+      expect(result.response.message).toBe('I hear you completely.');
     });
 
     test('returns fallback for unsafe input', () => {
@@ -20,7 +20,7 @@ describe('responsePostProcessor', () => {
       const result = postProcess({ rawResponse: raw, safetyResult, seed: 'test' });
       
       expect(result.wasFallback).toBe(true);
-      expect(_internals.FALLBACK_RESPONSES).toContain(result.response);
+      expect(_internals.FALLBACK_RESPONSES).toContain(result.response.message);
     });
 
     test('strips leaked roleplay markers', () => {
@@ -29,9 +29,9 @@ describe('responsePostProcessor', () => {
       
       const result = postProcess({ rawResponse: raw, safetyResult });
       
-      expect(result.response).not.toContain('Assistant:');
-      expect(result.response).not.toContain('User:');
-      expect(result.response).toContain('I can help you with that.');
+      expect(result.response.message).not.toContain('Assistant:');
+      expect(result.response.message).not.toContain('User:');
+      expect(result.response.message).toContain('I can help you with that.');
       expect(result.wasFallback).toBe(false);
     });
 
@@ -41,9 +41,9 @@ describe('responsePostProcessor', () => {
       
       const result = postProcess({ rawResponse: raw, safetyResult });
       
-      expect(result.response).not.toContain('[INSTRUCTIONS]');
-      expect(result.response).not.toContain('[CURRENT INPUT]');
-      expect(result.response).toContain('Follow these rules.');
+      expect(result.response.message).not.toContain('[INSTRUCTIONS]');
+      expect(result.response.message).not.toContain('[CURRENT INPUT]');
+      expect(result.response.message).toContain('Follow these rules.');
     });
 
     test('returns fallback if cleaning results in empty string', () => {
@@ -53,7 +53,7 @@ describe('responsePostProcessor', () => {
       const result = postProcess({ rawResponse: raw, safetyResult, seed: 'test2' });
       
       expect(result.wasFallback).toBe(true);
-      expect(_internals.FALLBACK_RESPONSES).toContain(result.response);
+      expect(_internals.FALLBACK_RESPONSES).toContain(result.response.message);
     });
   });
 

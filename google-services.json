@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "958319069873",
+    "project_id": "minddialogue-7f278",
+    "storage_bucket": "minddialogue-7f278.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958319069873:android:decceab68c451ea8f37090",
+        "android_client_info": {
+          "package_name": "com.example.thai_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2yEboJvYVApj13J4plsb2mRfKw1GIzRA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

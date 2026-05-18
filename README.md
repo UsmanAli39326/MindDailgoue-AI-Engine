@@ -66,7 +66,7 @@ docker run -p 8000:8000 -e OPENROUTER_API_KEY=your_key mind-dialogue
 ## 📂 Project Structure
 - `src/`: Core logic (Sanitizers, Safety, Memory, Personas).
 - `server.js`: The HTTP API entry point.
-- `tests/`: Comprehensive Jest testing suite (150+ tests).
+- `tests/`: Comprehensive Jest testing suite (264 tests across 31 suites).
 
 ---
 

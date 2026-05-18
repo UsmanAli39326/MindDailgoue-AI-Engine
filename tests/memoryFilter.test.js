@@ -2,9 +2,9 @@ import { filterMemory, _internals } from '../src/memoryFilter.js';
 
 describe('memoryFilter', () => {
   test('rejects empty or non-string inputs', () => {
-    expect(filterMemory('', 'neutral', false).shouldStore).toBe(false);
-    expect(filterMemory(null, 'neutral', false).shouldStore).toBe(false);
-    expect(filterMemory('   ', 'neutral', false).shouldStore).toBe(false);
+    expect(filterMemory('', 'calm', false).shouldStore).toBe(false);
+    expect(filterMemory(null, 'calm', false).shouldStore).toBe(false);
+    expect(filterMemory('   ', 'calm', false).shouldStore).toBe(false);
   });
 
   test('stores high risk inputs', () => {
@@ -20,20 +20,20 @@ describe('memoryFilter', () => {
   });
 
   test('stores personal facts with medium importance', () => {
-    const result = filterMemory('My boss yelled at me today', 'neutral', false);
+    const result = filterMemory('My boss yelled at me today', 'calm', false);
     expect(result.shouldStore).toBe(true);
     expect(result.importance).toBe('medium');
   });
 
   test('rejects casual small talk', () => {
-    const result = filterMemory('hello there', 'neutral', false);
+    const result = filterMemory('hello there', 'calm', false);
     expect(result.shouldStore).toBe(false);
     expect(result.importance).toBe('low');
   });
 
   test('rejects short false-positives', () => {
     // "my job" matches the pattern, but it's only 6 chars, so it should be filtered out
-    const result = filterMemory('my job', 'neutral', false);
+    const result = filterMemory('my job', 'calm', false);
     expect(result.shouldStore).toBe(false);
     expect(result.importance).toBe('low');
   });
@@ -44,3 +44,4 @@ describe('memoryFilter', () => {
     expect(result.importance).toBe('high'); // Sad makes it high
   });
 });
+

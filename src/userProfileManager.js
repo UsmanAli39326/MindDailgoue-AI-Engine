@@ -28,14 +28,13 @@ const THEME_WEIGHT_INCREMENT = 1.0;
 function createEmptyProfile() {
   return {
     intentHistory: {
+      happy: 0,
+      calm: 0,
       anxious: 0,
       sad: 0,
-      angry: 0,
-      hopeful: 0,
-      confused: 0,
-      neutral: 0
+      stressed: 0
     },
-    dominantEmotion: 'neutral',
+    dominantEmotion: 'calm',
     recurringThemes: new Set(),
     tonePreference: null,
     names: new Set(),
@@ -50,7 +49,7 @@ function createEmptyProfile() {
  * @returns {string} 
  */
 function calculateDominantEmotion(intentHistory) {
-  let dominant = 'neutral';
+  let dominant = 'calm';
   let maxWeight = -1;
 
   for (const [intent, weight] of Object.entries(intentHistory)) {
@@ -60,8 +59,8 @@ function calculateDominantEmotion(intentHistory) {
     }
   }
 
-  // Fallback to neutral if weights are tiny
-  if (maxWeight < 0.5) return 'neutral';
+  // Fallback to calm if weights are tiny
+  if (maxWeight < 0.5) return 'calm';
   return dominant;
 }
 
@@ -106,14 +105,21 @@ export function updateProfile(sessionId, newData = {}) {
     ? profileStore.get(sessionId) 
     : createEmptyProfile();
 
+  let intent = newData.intent;
+  if (intent) {
+    if (intent === 'hopeful') intent = 'happy';
+    else if (intent === 'angry') intent = 'stressed';
+    else if (intent === 'confused' || intent === 'neutral') intent = 'calm';
+  }
+
   // CONSTRAINT: Weighted Average update for emotional drift
-  if (newData.intent && profile.intentHistory[newData.intent] !== undefined) {
+  if (intent && profile.intentHistory[intent] !== undefined) {
     // Apply decay to all existing histories to normalize bounds over a very long session
     for (const key of Object.keys(profile.intentHistory)) {
       profile.intentHistory[key] *= DECAY_FACTOR;
     }
     // Add weight to new intent
-    profile.intentHistory[newData.intent] += THEME_WEIGHT_INCREMENT;
+    profile.intentHistory[intent] += THEME_WEIGHT_INCREMENT;
     
     // Recalculate dominant emotion
     profile.dominantEmotion = calculateDominantEmotion(profile.intentHistory);

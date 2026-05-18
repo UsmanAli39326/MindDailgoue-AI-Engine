@@ -31,11 +31,46 @@ const memoryStore = new Map();
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Call Ollama to get an embedding vector.
+ * Call Ollama or a Cloud-hosted endpoint to get an embedding vector.
+ * Includes a self-healing fallback to local Ollama if the cloud fails.
  * @param {string} text
  * @returns {Promise<number[]>}
  */
 async function getEmbedding(text) {
+  const useHosted = process.env.USE_HOSTED_AI === 'true';
+
+  if (useHosted) {
+    const hostedUrl = process.env.HOSTED_EMBEDDING_URL || 'https://openrouter.ai/api/v1/embeddings';
+    const hostedModel = process.env.HOSTED_EMBEDDING_MODEL || 'openai/text-embedding-3-small';
+    const apiKey = process.env.OPENROUTER_API_KEY || '';
+
+    try {
+      const response = await fetch(hostedUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model: hostedModel,
+          input: text,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const embedding = data.data?.[0]?.embedding;
+        if (embedding && Array.isArray(embedding)) {
+          return embedding;
+        }
+      }
+      console.warn(`[VECTOR STORAGE] Hosted embedding returned non-OK status: ${response.status}. Falling back to local Ollama.`);
+    } catch (err) {
+      console.warn(`[VECTOR STORAGE] Hosted embedding call failed: ${err.message}. Falling back to local Ollama.`);
+    }
+  }
+
+  // Local Ollama flow (Default/Fallback)
   try {
     const response = await fetch(`${OLLAMA_BASE_URL}${EMBED_ENDPOINT}`, {
       method: 'POST',

@@ -95,43 +95,68 @@ function stripArtifacts(text) {
 // Public API
 // ─────────────────────────────────────────────────────────────
 
+import { parseAIResponse } from './utils/parseAIResponse.js';
+
+// ─────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Post-process the LLM response.
  *
  * Steps:
- *   1. If safety check failed → return fallback response
- *   2. Strip leaked prompt artifacts and role-play markers
- *   3. Trim whitespace
- *   4. If result is empty → return fallback response
+ *   1. If safety check failed → return fallback response envelope
+ *   2. Parse and validate JSON envelope
+ *   3. Strip leaked prompt artifacts from the message field
+ *   4. If message is empty after cleaning → return fallback response envelope
  *
  * @param {Object} options
  * @param {string} options.rawResponse   — raw text from LLM
  * @param {Object} options.safetyResult  — output from responseSafetyCheck
  * @param {string} [options.seed='']     — seed for fallback selection (e.g., user input)
- * @returns {{ response: string, wasFallback: boolean }}
+ * @returns {{ response: Object, wasFallback: boolean }}
  */
 export function postProcess({ rawResponse, safetyResult, seed = '' }) {
   // Safety-failed → fallback
   if (!safetyResult.safe) {
     return {
-      response: pickFallback(seed),
+      response: {
+        message: pickFallback(seed),
+        emotion: "calm",
+        intensity: 0.5,
+        stress_level: 0.3,
+        crisis: false,
+        suggestions: [],
+        mood_tag: "fallback_safety"
+      },
       wasFallback: true,
     };
   }
 
-  // Clean the response
-  let cleaned = stripArtifacts(rawResponse || '');
+  // Parse structured envelope
+  const envelope = parseAIResponse(rawResponse || '');
+
+  // Clean the message field
+  envelope.message = stripArtifacts(envelope.message);
 
   // Empty after cleaning → fallback
-  if (cleaned.length === 0) {
+  if (envelope.message.length === 0) {
     return {
-      response: pickFallback(seed),
+      response: {
+        message: pickFallback(seed),
+        emotion: "calm",
+        intensity: 0.5,
+        stress_level: 0.3,
+        crisis: false,
+        suggestions: [],
+        mood_tag: "fallback_empty"
+      },
       wasFallback: true,
     };
   }
 
   return {
-    response: cleaned,
+    response: envelope,
     wasFallback: false,
   };
 }

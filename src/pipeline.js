@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { sanitize } from './inputSanitizer.js';
-import { check as safetyCheck } from './safetyChecker.js';
+import { check as safetyCheck } from './middleware/crisisScanner.js';
 import { detect as detectIntent } from './intentDetector.js';
 import { build as buildPrompt } from './systemPromptBuilder.js';
 import { extractEntities } from './entityExtractor.js';
@@ -139,13 +139,13 @@ export function processInput(rawInput) {
   if (!sanitizeResult.success) {
     return {
       cleanedInput: '',
-      detectedIntent: 'neutral',
+      detectedIntent: 'calm',
       intentConfidence: 'low',
       intentScores: {},
       isHighRisk: false,
       riskSeverity: 'none',
       safetyCategory: null,
-      systemPrompt: buildPrompt('neutral'),
+      systemPrompt: buildPrompt('calm'),
       nextStep: 'continue',
       metadata: { error: sanitizeResult.error },
     };
@@ -170,25 +170,6 @@ export function processInput(rawInput) {
   // Hook: afterSafetyCheck
   context = runHooks('afterSafetyCheck', context);
 
-  // Short-circuit on HIGH severity
-  if (context.safetyResult.riskSeverity === 'high') {
-    return {
-      cleanedInput: context.cleanedInput,
-      detectedIntent: 'neutral',
-      intentConfidence: 'low',
-      intentScores: {},
-      isHighRisk: true,
-      riskSeverity: 'high',
-      safetyCategory: context.safetyResult.category,
-      systemPrompt: context.safetyResult.crisisResponse,
-      nextStep: 'crisis_override',
-      metadata: {
-        ...context.metadata,
-        safetyMatches: context.safetyResult.matches,
-      },
-    };
-  }
-
   // ─── Stage 3: Intent Detection ──────────────────────────
   context.intentResult = detectIntent(context.cleanedInput);
 
@@ -197,6 +178,12 @@ export function processInput(rawInput) {
 
   // ─── Stage 4: System Prompt Construction ────────────────
   context.systemPrompt = buildPrompt(context.intentResult.intent);
+  
+  if (context.safetyResult.crisisInstruction) {
+    context.systemPrompt += context.safetyResult.crisisInstruction;
+  }
+
+  context.nextStep = context.safetyResult.isHighRisk ? 'crisis_override' : 'continue';
 
   // Hook: afterPromptBuild
   context = runHooks('afterPromptBuild', context);
@@ -207,11 +194,11 @@ export function processInput(rawInput) {
     detectedIntent: context.intentResult.intent,
     intentConfidence: context.intentResult.confidence,
     intentScores: context.intentResult.scores,
-    isHighRisk: false,
+    isHighRisk: context.safetyResult.isHighRisk,
     riskSeverity: context.safetyResult.riskSeverity,
     safetyCategory: context.safetyResult.category,
     systemPrompt: context.systemPrompt,
-    nextStep: context.safetyResult.nextStep,
+    nextStep: context.nextStep,
     metadata: {
       ...context.metadata,
       ...(context.safetyResult.matches.length > 0

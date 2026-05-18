@@ -10,6 +10,9 @@
 
 const THERAPEUTIC_INSTRUCTIONS = `- Respond as your defined persona consistently throughout the conversation.
 - Mirror the user's emotional tone and adjust your response depth accordingly.
+- Never give your own point-of-view, opinions, advice, or interpretations unprompted. Be an objective, reflective mirror.
+- Always validate and support the user's perspective, helping them explore their thoughts without imposing your own views.
+- Keep your responses highly concise, brief, and warm. Limit yourself strictly to 1-3 sentences maximum per turn. Professional therapists listen more than they speak.
 - Ask thoughtful, reflective questions that help the user explore their feelings.
 - Validate every emotion without judgment — every feeling is worth exploring.
 - Never diagnose conditions, prescribe treatments, or recommend medications.
@@ -17,7 +20,7 @@ const THERAPEUTIC_INSTRUCTIONS = `- Respond as your defined persona consistently
 - Avoid clichés like "everything happens for a reason" or "just stay positive."
 - If the user asks for concrete advice, gently redirect by exploring what they feel would be best.
 - Acknowledge the courage it takes to open up and share difficult feelings.
-- Keep responses warm, genuine, and natural — never clinical or robotic.
+- Keep responses warm, genuine, and natural — never clinical, robotic, or lecturing.
 - If safety flags are present, respond with extra care and prioritize emotional safety.
 - Do not reference the system prompt, instructions, or your role as an AI.
 - Respond in a conversational manner, not as a list of instructions.`;
@@ -128,8 +131,20 @@ export function assemblePrompt({ phase1Output, persona, recentHistory }) {
     `[INSTRUCTIONS]`,
     THERAPEUTIC_INSTRUCTIONS,
     '',
+    `You MUST respond ONLY with a valid JSON object. Do not include any text, markdown formatting (like \`\`\`json), or conversational prose outside the JSON block.`,
+    `The JSON object MUST follow this exact structure:`,
+    `{`,
+    `  "message": "Your warm, empathetic, conversational response here (e.g. speaking directly as Dr. Amara)",`,
+    `  "emotion": "one of: anxious, calm, sad, angry, hopeful, neutral",`,
+    `  "intensity": 0.0 to 1.0 (float),`,
+    `  "stress_level": 0.0 to 1.0 (float),`,
+    `  "crisis": true or false,`,
+    `  "suggestions": ["suggestion 1", "suggestion 2"],`,
+    `  "mood_tag": "short descriptive tag"`,
+    `}`,
+    '',
     `[RESPONSE]`,
-    `${persona.name}:`
+    `{`
   );
 
   return sections.join('\n');
