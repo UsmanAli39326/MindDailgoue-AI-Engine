@@ -35,21 +35,23 @@ app.use(requestLogger);
 app.use(cors());
 app.use(express.json());
 
-// 1. Health Check Route (Completely Public, No Auth, No App Check)
+// 1. Health check — fully public
 app.use('/', healthRoutes);
 
-// 2. App Check Middleware (Applied to all subsequent routes, including public auth routes)
-app.use(verifyAppCheck);
-
-// 3. Public Auth Routes (Requires App Check verification, but No ID Token Auth)
+// 2. Public auth routes — NO App Check yet (register/login/refresh)
 app.use('/auth', authRoutes);
 
-// 4. Authenticated Request Middlewares (Applied to all subsequent API routes)
+// 3. App Check — applied to everything below
+app.use(verifyAppCheck);
+
+// 4. Token + rate limit
 app.use(verifyToken);
 app.use(rateLimit);
 
-// 5. Protected Routes
+// 5. Protected routes
 app.use('/chat', chatRoutes);
+app.use('/personalities', personalityRoutes);
+// ... rest of routes
 app.use('/therapist', personalityRoutes); // Maintaining backward compatibility for /therapist/initial-message
 app.use('/personalities', personalityRoutes);
 app.use('/admin', adminRoutes);
