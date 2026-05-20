@@ -17,6 +17,7 @@ const USER_SUBCOLLECTIONS = [
   'insights',
   'themeProfile',
   'crisisLog',
+  'fcmTokens',
 ];
 
 /**

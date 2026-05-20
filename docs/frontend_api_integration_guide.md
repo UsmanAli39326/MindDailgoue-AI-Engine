@@ -16,7 +16,7 @@ Never call HTTP endpoints directly from your UI components (like Widgets in Flut
 ### 2. Centralized Interceptors (Dio / HTTP)
 Do not manually attach the `Authorization` header to every request. 
 - Create an **Auth Interceptor** that intercepts every outgoing request, reads the `idToken` from secure storage (e.g., `flutter_secure_storage`), and injects `Authorization: Bearer <token>`.
-- Create a **Refresh Interceptor** that listens for `401 Unauthorized` responses and silently triggers a token refresh using the Firebase Auth SDK before retrying the failed request.
+- Create a **Refresh Interceptor** that listens for `401 Unauthorized` responses and silently calls `POST /auth/refresh` with the stored `refreshToken` to get a new `idToken`, then retries the failed request. No Firebase SDK is needed on the client.
 
 ### 3. Unified Error & Rate Limit Handling
 - Create an **Error Interceptor** that globally catches `429 Too Many Requests`. When caught, it should broadcast an event (e.g., via a Stream or BLoC) that triggers a global "Cooldown Timer" overlay in your UI, using the `retryAfter` field from the error payload.
@@ -94,6 +94,33 @@ Do not manually attach the `Authorization` header to every request.
     "message": "Logged out successfully"
   }
   ```
+
+#### 1.4 Refresh Token
+- **Method & Endpoint**: `POST /auth/refresh`
+- **Auth Required**: No (uses `refreshToken` instead)
+- **Purpose**: Exchanges an expired `idToken`'s companion `refreshToken` for a fresh `idToken`. Firebase ID tokens expire after **1 hour**. Your frontend should call this automatically when it receives a `401` response, or proactively before expiry.
+- **Required Payload**:
+  ```json
+  {
+    "refreshToken": "refresh_token_string_from_login"
+  }
+  ```
+- **Expected Response (200 OK)**:
+  ```json
+  {
+    "idToken": "new_jwt_token_string",
+    "refreshToken": "new_refresh_token_string",
+    "expiresIn": "3600"
+  }
+  ```
+  *(Note: `expiresIn` is in seconds. Store the new `refreshToken` — Firebase may rotate it on each refresh. The `idToken` should replace the old one in secure storage.)*
+- **Error Response (400)**:
+  ```json
+  {
+    "error": "TOKEN_EXPIRED"
+  }
+  ```
+  *(If the refresh token itself is revoked/invalid, redirect the user to the login screen.)*
 
 ---
 
@@ -280,10 +307,67 @@ Do not manually attach the `Authorization` header to every request.
 - **Auth Required**: Yes
 - **Required Payload**: None
 - **Expected Response (200 OK)**: Array of persona objects.
+  ```json
+  [
+    {
+      "id": "custom-1716035987",
+      "name": "ZenMaster",
+      "style": "Coach",
+      "tone": "Balanced",
+      "depth": "Medium",
+      "traits": ["Calm", "Friendly"],
+      "backstory": "A mindful guru promoting meditation.",
+      "avatarAsset": "assets/avatars/zen.png"
+    }
+  ]
+  ```
 
-#### 6.2 Create Custom Persona
+#### 6.2 Get Personality by ID
+- **Method & Endpoint**: `GET /personalities/:id`
+- **Auth Required**: Yes
+- **Required Payload**: None
+- **Expected Response (200 OK)**:
+  ```json
+  {
+    "id": "custom-1716035987",
+    "name": "ZenMaster",
+    "greeting": "Hi there! I'm ZenMaster. Let's work together to set goals, build momentum, and grow. *What shall we focus on today?*",
+    "style": "Coach",
+    "tone": "Balanced",
+    "depth": "Medium",
+    "traits": ["Calm", "Friendly"],
+    "backstory": "A mindful guru promoting meditation.",
+    "avatarAsset": "assets/avatars/zen.png"
+  }
+  ```
+
+#### 6.3 Create Custom Persona
 - **Method & Endpoint**: `POST /personalities`
 - **Auth Required**: Yes
+
+##### Option A: Structured Option-Based Creation (Recommended for Mobile UI)
+Use this option to construct a premium therapist companion automatically using simple, high-level choices:
+- **Required Payload**:
+  ```json
+  {
+    "name": "ZenMaster",
+    "avatarAsset": "assets/avatars/zen.png",
+    "traits": ["Calm", "Friendly"],
+    "tone": "Balanced",
+    "depth": "Medium",
+    "style": "Coach",
+    "backstory": "A mindful guru promoting meditation."
+  }
+  ```
+  *Values Spec:*
+  * `traits`: Any selection from `["Calm", "Logical", "Friendly", "Strict", "Motivational", "Empathetic"]`
+  * `tone`: `"Emotional"`, `"Balanced"`, `"Rational"`
+  * `depth`: `"Short"`, `"Medium"`, `"Deep"`
+  * `style`: `"Advice"`, `"Listener"`, `"Coach"`
+  * `backstory`: Free-form therapist background and approach string.
+
+##### Option B: Raw Prompt Creation (Legacy & Advanced)
+Directly supply pre-compiled clinical prompts and messages:
 - **Required Payload**:
   ```json
   {
@@ -291,10 +375,11 @@ Do not manually attach the `Authorization` header to every request.
     "style": "Casual",
     "tone": "Friendly",
     "personalityPrompt": "You are a supportive friend...",
-    "initialMessage": "Hey there! How's it going?"
+    "initialMessage": "Hey there! How's it going?",
+    "avatarAsset": "assets/avatars/friendly.png"
   }
   ```
-- **Expected Response (201 Created)**: Returns the complete persona object including its new `id`.
+- **Expected Response (201 Created)**: Returns the completed persona object including its new `id`, compiled `personalityPrompt`, `initialMessage`, and metadata.
 
 ---
 
@@ -401,7 +486,7 @@ To prevent abuse and manage LLM costs, the backend enforces limits (e.g., max 50
   3. Show a friendly message: "I'm feeling a bit tired right now. Let's chat again in [time]."
 
 ### Use Case 4: Token Expiration (Auth Refresh)
-Firebase `idTokens` expire after 1 hour.
+Firebase `idTokens` expire after 1 hour. Since the frontend does **not** use the Firebase SDK, token refresh is handled entirely through the backend.
 - **Backend Behavior**: If the app sends an expired token in the `Authorization` header, the backend rejects it.
 - **What the API Returns (401 Unauthorized)**:
   ```json
@@ -411,8 +496,9 @@ Firebase `idTokens` expire after 1 hour.
   ```
 - **Frontend Action**:
   1. An HTTP Interceptor catches the `401`.
-  2. The Interceptor calls the Firebase Auth SDK: `FirebaseAuth.instance.currentUser?.getIdToken(true)`.
-  3. The Interceptor automatically retries the failed API call with the new token so the user never notices the disruption.
+  2. The Interceptor calls `POST /auth/refresh` with the stored `refreshToken`.
+  3. On success: store the new `idToken` and `refreshToken` in secure storage, then automatically retry the failed API call with the new token — the user never notices.
+  4. On failure (e.g., refresh token revoked): clear stored tokens and redirect the user to the login screen.
 
 ### Use Case 5: Offline Mode & Reconnection
 Mobile users frequently lose service (e.g., entering a tunnel).

@@ -15,6 +15,7 @@ const router = express.Router();
 
 
 router.post('/limits', (req, res) => {
+  if (!req.user?.isAdmin) return res.status(403).json({ error: 'Forbidden' });
   try {
     const { uid, messagesPerHour, sessionsPerDay } = req.body;
 
@@ -50,6 +51,7 @@ router.post('/limits', (req, res) => {
  * Get the current effective limits for a user.
  */
 router.get('/limits/:uid', (req, res) => {
+  if (!req.user?.isAdmin) return res.status(403).json({ error: 'Forbidden' });
   const { uid } = req.params;
   const limits = getUserLimits(uid);
   res.json({ uid, limits });
@@ -60,6 +62,7 @@ router.get('/limits/:uid', (req, res) => {
  * Reset a user's rate limit counters.
  */
 router.post('/limits/:uid/reset', (req, res) => {
+  if (!req.user?.isAdmin) return res.status(403).json({ error: 'Forbidden' });
   const { uid } = req.params;
   resetUserCounters(uid);
   console.log(`[ADMIN] Reset rate limit counters for user ${uid}`);
@@ -73,10 +76,8 @@ router.post('/limits/:uid/reset', (req, res) => {
  */
 router.post('/trigger-checkins', (req, res) => {
   const secret = req.headers['x-cron-secret'];
-  if (!process.env.CRON_SECRET) {
-     console.warn('⚠️ CRON_SECRET is not set in environment variables');
-  } else if (!secret || secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid cron secret' });
+  if (!process.env.CRON_SECRET || !secret || secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   // Return 202 immediately to cron-job.org

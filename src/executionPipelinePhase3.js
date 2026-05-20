@@ -47,9 +47,9 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
 
   // Load Phase 2 persona and session memory (short term)
   const persona = await getPersonaById(therapistId, uid);
-  await getOrCreateSession(sessionId, therapistId);
+  await getOrCreateSession(uid, sessionId, therapistId);
 
-  await appendMessage(sessionId, 'user', phase1Output.cleanedInput || input);
+  await appendMessage(uid, sessionId, 'user', phase1Output.cleanedInput || input);
 
   if (uid) {
     storeEncryptedMessage(uid, {
@@ -60,7 +60,7 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
     }).catch(err => console.error('[DB PERSISTENCE] User message fail:', err.message));
   }
 
-  const recentHistory = await getRecentHistory(sessionId);
+  const recentHistory = await getRecentHistory(uid, sessionId);
 
   // 2. High-Risk Short Circuit
   if (phase1Output.nextStep === 'crisis_override') {
@@ -81,7 +81,7 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
       isHighRisk: true
     });
 
-    await appendMessage(sessionId, 'assistant', augmented.message);
+    await appendMessage(uid, sessionId, 'assistant', augmented.message);
 
     if (uid) {
       storeEncryptedMessage(uid, {
@@ -217,7 +217,7 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
   logMood(uid, sessionId, augmentedResponse);
 
   // Append safe response to short-term history
-  await appendMessage(sessionId, 'assistant', augmentedResponse.message || augmentedResponse);
+  await appendMessage(uid, sessionId, 'assistant', augmentedResponse.message || augmentedResponse);
 
   if (uid) {
     storeEncryptedMessage(uid, {
@@ -235,7 +235,7 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
   if (uid) {
     try {
       recordActivity(uid);
-      const currentHistory = await getRecentHistory(sessionId);
+      const currentHistory = await getRecentHistory(uid, sessionId);
       const historyLines = currentHistory ? currentHistory.split('\n').filter(Boolean) : [];
       if (shouldSummarize(historyLines.length)) {
         summarizeAndStore(uid, sessionId, historyLines).then(summary => {

@@ -29,7 +29,13 @@ export function logMood(uid, sessionId, envelope) {
     return;
   }
 
-  const encryptedEmotion = encrypt(envelope.emotion || 'neutral');
+  let encryptedEmotion;
+  try {
+    encryptedEmotion = encrypt(envelope.emotion || 'neutral');
+  } catch (error) {
+    console.error('[MOOD SERVICE] Encryption failed for mood:', error.message);
+    return;
+  }
 
   const entry = {
     ts: new Date().toISOString(),
@@ -113,8 +119,15 @@ export async function getMoodLogs(uid, days = 30) {
 
     const results = [];
     // Firestore: batch get by document IDs
-    for (const date of dates) {
-      const doc = await db.collection('users').doc(uid).collection('moodLog').doc(date).get();
+    const snapshots = await Promise.all(
+      dates.map(date =>
+        db.collection('users').doc(uid).collection('moodLog').doc(date).get()
+      )
+    );
+
+    for (let i = 0; i < dates.length; i++) {
+      const date = dates[i];
+      const doc = snapshots[i];
       if (doc.exists) {
         const data = doc.data();
         if (data && Array.isArray(data.entries)) {

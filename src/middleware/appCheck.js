@@ -24,6 +24,10 @@ export async function verifyAppCheck(req, res, next) {
   }
 
   try {
+    if (!adminApp) {
+      console.warn('[APP CHECK] Skipping verification: Firebase Admin not fully initialized.');
+      return next();
+    }
     const appCheck = admin.appCheck(adminApp);
     const decodedToken = await appCheck.verifyToken(appCheckToken);
     

@@ -79,7 +79,7 @@ router.post('/:id/close', async (req, res) => {
     // Get recent history for summarization
     let history;
     try {
-      history = getRecentHistory(sessionId);
+      history = await getRecentHistory(uid, sessionId);
     } catch {
       history = '';
     }
