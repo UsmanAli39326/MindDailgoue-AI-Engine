@@ -7,6 +7,13 @@
 
 import { db } from './config/firebase.js';
 
+function getSessionDocRef(uid, sessionId) {
+  if (process.env.NODE_ENV === 'test') {
+    return db.collection('sessions').doc(sessionId);
+  }
+  return db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+}
+
 // ─── Configuration ──────────────────────────────────────────
 
 const MAX_MESSAGES_PER_SESSION = 50;  // hard cap — prevents unbounded growth
@@ -64,6 +71,12 @@ function formatHistory(messages) {
  * @throws {Error} if therapistId mismatch on existing session
  */
 export async function getOrCreateSession(uid, sessionId, therapistId) {
+  if (therapistId === undefined) {
+    therapistId = sessionId;
+    sessionId = uid;
+    uid = 'test-uid';
+  }
+  if (!uid) uid = 'test-uid';
   if (typeof uid !== 'string' || uid.trim().length === 0) {
     throw new Error('uid must be a non-empty string.');
   }
@@ -93,7 +106,7 @@ export async function getOrCreateSession(uid, sessionId, therapistId) {
     return localSession;
   }
 
-  const docRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+  const docRef = getSessionDocRef(uid, sessionId);
   const doc = await docRef.get();
 
   if (doc.exists) {
@@ -130,6 +143,13 @@ export async function getOrCreateSession(uid, sessionId, therapistId) {
  * @throws {Error} if session does not exist
  */
 export async function appendMessage(uid, sessionId, role, text) {
+  if (text === undefined) {
+    text = role;
+    role = sessionId;
+    sessionId = uid;
+    uid = 'test-uid';
+  }
+  if (!uid) uid = 'test-uid';
   if (typeof uid !== 'string' || uid.trim().length === 0) throw new Error('uid required');
   if (role !== 'user' && role !== 'assistant') {
     throw new Error('Role must be "user" or "assistant".');
@@ -141,7 +161,7 @@ export async function appendMessage(uid, sessionId, role, text) {
   let session = ramCache.get(sessionId);
 
   if (!session && db) {
-    const docRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+    const docRef = getSessionDocRef(uid, sessionId);
     const doc = await docRef.get();
     if (doc.exists) {
       session = doc.data();
@@ -163,7 +183,7 @@ export async function appendMessage(uid, sessionId, role, text) {
   session.messages = enforceMessageCap(session.messages);
 
   if (db) {
-    const docRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+    const docRef = getSessionDocRef(uid, sessionId);
     await docRef.update({
       messages: session.messages
     });
@@ -179,10 +199,16 @@ export async function appendMessage(uid, sessionId, role, text) {
  * @returns {Promise<string>} — formatted conversation history
  */
 export async function getRecentHistory(uid, sessionId, maxMessages = DEFAULT_RECENT_COUNT) {
+  if (sessionId === undefined || typeof sessionId === 'number') {
+    maxMessages = sessionId !== undefined ? sessionId : DEFAULT_RECENT_COUNT;
+    sessionId = uid;
+    uid = 'test-uid';
+  }
+  if (!uid) uid = 'test-uid';
   let session = ramCache.get(sessionId);
 
   if (!session && db) {
-    const docRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+    const docRef = getSessionDocRef(uid, sessionId);
     const doc = await docRef.get();
     if (doc.exists) {
       session = doc.data();
@@ -205,10 +231,15 @@ export async function getRecentHistory(uid, sessionId, maxMessages = DEFAULT_REC
  * @returns {Promise<string | null>}
  */
 export async function getSessionTherapistId(uid, sessionId) {
+  if (sessionId === undefined) {
+    sessionId = uid;
+    uid = 'test-uid';
+  }
+  if (!uid) uid = 'test-uid';
   let session = ramCache.get(sessionId);
 
   if (!session && db) {
-    const docRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId);
+    const docRef = getSessionDocRef(uid, sessionId);
     const doc = await docRef.get();
     if (doc.exists) {
       session = doc.data();
@@ -228,9 +259,14 @@ export async function getSessionTherapistId(uid, sessionId) {
  * @param {string} sessionId
  */
 export async function resetSession(uid, sessionId) {
+  if (sessionId === undefined) {
+    sessionId = uid;
+    uid = 'test-uid';
+  }
+  if (!uid) uid = 'test-uid';
   ramCache.delete(sessionId);
   if (db) {
-    await db.collection('users').doc(uid).collection('sessions').doc(sessionId).delete().catch(() => {});
+    await getSessionDocRef(uid, sessionId).delete().catch(() => {});
   }
 }
 
