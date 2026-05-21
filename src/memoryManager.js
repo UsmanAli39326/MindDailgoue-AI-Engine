@@ -165,6 +165,7 @@ export async function appendMessage(uid, sessionId, role, text) {
     const doc = await docRef.get();
     if (doc.exists) {
       session = doc.data();
+      if (!session.messages) session.messages = []; 
       ramCache.set(sessionId, session);
     }
   }
@@ -212,10 +213,11 @@ export async function getRecentHistory(uid, sessionId, maxMessages = DEFAULT_REC
     const doc = await docRef.get();
     if (doc.exists) {
       session = doc.data();
+      if (!session.messages) session.messages = [];
       ramCache.set(sessionId, session);
     }
   }
-
+  
   if (!session) {
     return 'No previous conversation history.';
   }

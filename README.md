@@ -45,6 +45,8 @@ OPENROUTER_API_KEY=your_key_here
 OPENROUTER_MODEL=openrouter/free
 ```
 
+You must also obtain a `google-services.json` file from the Firebase console (Project Settings > Service accounts) and place it in the root directory. **Never commit this file.** See `google-services.json.example` for the required format.
+
 ### 4. Run Locally
 ```bash
 npm start

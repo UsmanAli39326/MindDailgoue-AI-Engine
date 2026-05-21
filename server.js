@@ -32,8 +32,20 @@ const PORT = process.env.PORT || 8000;
 
 // Middleware
 app.use(requestLogger);
-app.use(cors());
-app.use(express.json());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server (no origin) and listed origins
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '16kb' }));
 
 // 1. Health check — fully public
 app.use('/', healthRoutes);
@@ -52,7 +64,6 @@ app.use(rateLimit);
 app.use('/chat', chatRoutes);
 app.use('/personalities', personalityRoutes);
 // ... rest of routes
-app.use('/therapist', personalityRoutes); // Maintaining backward compatibility for /therapist/initial-message
 app.use('/personalities', personalityRoutes);
 app.use('/admin', adminRoutes);
 app.use('/mood', moodRoutes);
@@ -62,12 +73,13 @@ app.use('/memory', memoryRoutes);
 app.use('/themes', themesRoutes);
 app.use('/messages', messagesRoutes);
 app.use('/account', accountRoutes);
-app.use('/auth', deviceRoutes);
+app.use('/', deviceRoutes);
 app.use('/stats', statsRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error('[SERVER ERROR]', err.stack);
+  if (res.headersSent) return next(err);
   res.status(500).json({ error: 'Internal Server Error' });
 });
 

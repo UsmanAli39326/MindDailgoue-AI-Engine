@@ -91,11 +91,10 @@ export async function storeEncryptedMessage(uid, message) {
       .doc(uid)
       .collection('sessions')
       .doc(sessionId)
-      .update({
+      .set({
         messageCount: FieldValue.increment(1)
-      })
+      }, { merge: true })
       .catch(err => {
-        // Safe bypass if the session document does not exist yet (e.g. dev mode fallback)
         console.warn(`[ENCRYPTED STORAGE] Could not increment messageCount for session ${sessionId}: ${err.message}`);
       });
 
@@ -157,7 +156,7 @@ export async function getSessionMessages(uid, sessionId, limit = 50, startAfter 
         .collection('messages')
         .doc(startAfter)
         .get();
-      
+
       if (startAfterDoc.exists) {
         query = query.startAfter(startAfterDoc);
       }

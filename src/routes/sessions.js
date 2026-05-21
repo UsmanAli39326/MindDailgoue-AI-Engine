@@ -32,6 +32,7 @@ router.post('/', async (req, res) => {
       createdAt: new Date().toISOString(),
       status: 'active',
       messageCount: 0,
+      messages: [],
     };
 
     const ref = await db.collection('users').doc(uid).collection('sessions').add(sessionDoc);
