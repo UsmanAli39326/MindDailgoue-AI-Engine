@@ -1,5 +1,13 @@
 import { personalityService } from './services/personalityService.js';
 
+// Alias map for legacy/frontend persona ID names
+// Frontend may send these IDs; they map to the correct backend personas
+const PERSONA_ALIASES = {
+  'mindfulness-guide': 'mindful-coach',
+  'growth-coach': 'motivator',
+  'compassionate-listener': 'empathic-listener'
+};
+
 // ─── Persona Definitions ────────────────────────────────────
 // These serve as the in-memory fallback if Firestore is unavailable
 const PERSONAS = [
@@ -115,7 +123,16 @@ export async function getPersonaById(id, uid = null) {
     throw new Error('Persona ID must be a non-empty string.');
   }
 
-  // 1. Try Private Custom Persona
+  // Resolve legacy/frontend aliases FIRST (don't apply to custom persona IDs)
+  let resolvedId = id;
+  if (!id.startsWith('custom-')) {
+    resolvedId = PERSONA_ALIASES[id] || id;
+    if (resolvedId !== id) {
+      console.log(`[PERSONA ALIAS] "${id}" → "${resolvedId}"`);
+    }
+  }
+
+  // 1. Try Private Custom Persona (use original ID, not resolved)
   if (uid) {
     const customPersona = await personalityService.getUserCustomById(uid, id);
     if (customPersona) {
@@ -123,18 +140,18 @@ export async function getPersonaById(id, uid = null) {
     }
   }
 
-  // 2. Try Global Firestore
-  const firestorePersona = await personalityService.getById(id);
+  // 2. Try Global Firestore (use RESOLVED ID)
+  const firestorePersona = await personalityService.getById(resolvedId);
   if (firestorePersona) {
     return Object.freeze(firestorePersona);
   }
 
-  // 3. Try Fallback Map
-  const persona = PERSONA_MAP.get(id);
+  // 3. Try Fallback Map (use RESOLVED ID)
+  const persona = PERSONA_MAP.get(resolvedId);
   if (!persona) {
     const available = PERSONAS.map((p) => p.id).join(', ');
     throw new Error(
-      `Persona "${id}" not found. Available personas: ${available}`
+      `Persona "${id}" (resolved to "${resolvedId}") not found. Available personas: ${available}`
     );
   }
 

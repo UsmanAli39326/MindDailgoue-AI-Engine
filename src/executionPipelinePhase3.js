@@ -25,6 +25,7 @@ import { updateThemes } from './services/themeTracker.js';
 import { recordActivity } from './services/streakService.js';
 import { storeEncryptedMessage } from './services/encryptedStorage.js';
 import { getUserBasicInfo, updateLastActive } from './services/userService.js';
+import { EncryptionService } from './services/encryptionService.js';
 
 export async function executePhase3({ sessionId, therapistId, input, uid }) {
   // 0. Cooldown check
@@ -52,9 +53,10 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
   await appendMessage(uid, sessionId, 'user', phase1Output.cleanedInput || input);
 
   if (uid) {
+    const userEncrypted = EncryptionService.encrypt(phase1Output.cleanedInput || input);
     storeEncryptedMessage(uid, {
-      ciphertext: phase1Output.cleanedInput || input,
-      iv: 'plaintext',
+      ciphertext: userEncrypted.ciphertext,
+      iv: userEncrypted.iv,
       sessionId,
       role: 'user'
     }).catch(err => console.error('[DB PERSISTENCE] User message fail:', err.message));
@@ -84,9 +86,10 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
     await appendMessage(uid, sessionId, 'assistant', augmented.message);
 
     if (uid) {
+      const crisisEncrypted = EncryptionService.encrypt(augmented.message || augmented);
       storeEncryptedMessage(uid, {
-        ciphertext: augmented.message,
-        iv: 'plaintext',
+        ciphertext: crisisEncrypted.ciphertext,
+        iv: crisisEncrypted.iv,
         sessionId,
         role: 'assistant'
       }).catch(err => console.error('[DB PERSISTENCE] Assistant crisis override fail:', err.message));
@@ -121,7 +124,7 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
   }
 
   // 5. User Profile loading
-  const userProfile = getProfile(sessionId);
+  const userProfile = getProfile(uid);
 
   // 6. Context Building
   let crossSessionContext = '';
@@ -198,7 +201,7 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
   // 10. Update Profile (incremental drift prevention)
   let profileUpdated = false;
   if (!wasFallback) {
-    updateProfile(sessionId, {
+    updateProfile(uid, {
       intent: phase1Output.detectedIntent,
       entities: phase1Output.metadata.entities
     });
@@ -220,9 +223,10 @@ export async function executePhase3({ sessionId, therapistId, input, uid }) {
   await appendMessage(uid, sessionId, 'assistant', augmentedResponse.message || augmentedResponse);
 
   if (uid) {
+    const assistantEncrypted = EncryptionService.encrypt(augmentedResponse.message || augmentedResponse);
     storeEncryptedMessage(uid, {
-      ciphertext: augmentedResponse.message || augmentedResponse,
-      iv: 'plaintext',
+      ciphertext: assistantEncrypted.ciphertext,
+      iv: assistantEncrypted.iv,
       sessionId,
       role: 'assistant'
     }).catch(err => console.error('[DB PERSISTENCE] Assistant message fail:', err.message));

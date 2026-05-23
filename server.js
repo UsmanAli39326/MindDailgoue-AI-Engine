@@ -37,10 +37,13 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .map(o => o.trim())
   .filter(Boolean);
 
+console.log(`✅ CORS Configured. Allowed origins: ${ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS.join(', ') : '(none — will reject all browser requests)'}`);
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server (no origin) and listed origins
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    if (!origin || ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) {
+      return callback(null, true);
+    }
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
@@ -64,7 +67,6 @@ app.use(rateLimit);
 app.use('/chat', chatRoutes);
 app.use('/personalities', personalityRoutes);
 // ... rest of routes
-app.use('/personalities', personalityRoutes);
 app.use('/admin', adminRoutes);
 app.use('/mood', moodRoutes);
 app.use('/insights', insightsRoutes);
