@@ -25,7 +25,10 @@ export async function storeEncryptedMessage(uid, message) {
   const { ciphertext, iv, sessionId, role, client_id } = message;
 
   if (!ciphertext || !iv || !sessionId) {
-    console.warn('[ENCRYPTED STORAGE] Missing required fields.');
+    console.warn(`[ENCRYPTED STORAGE] Missing required fields.
+      ciphertest: ${ciphertext ? 1 : 0},
+      iv: ${iv ? 1 : 0},
+      sessionId: ${sessioId ? 1 : 0}`);
     return null;
   }
 

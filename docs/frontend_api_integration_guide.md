@@ -1,4 +1,4 @@
-# MindDialogue API: Mobile Integration & Long-Term Maintenance Guide
+ad# MindDialogue API: Mobile Integration & Long-Term Maintenance Guide
 
 This document is the definitive guide to integrating the MindDialogue backend with a mobile application (such as Flutter). It covers architectural best practices for long-term maintainability and provides exhaustive specifications for every API endpoint.
 
