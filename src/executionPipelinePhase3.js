@@ -25,7 +25,7 @@ import { updateThemes } from './services/themeTracker.js';
 import { recordActivity } from './services/streakService.js';
 import { storeEncryptedMessage } from './services/encryptedStorage.js';
 import { getUserBasicInfo, updateLastActive } from './services/userService.js';
-import { EncryptionService } from './services/encryptionService.js';
+import * as EncryptionService from './services/encryptionService.js';
 
 export async function executePhase3({ sessionId, therapistId, input, uid }) {
   // 0. Cooldown check
