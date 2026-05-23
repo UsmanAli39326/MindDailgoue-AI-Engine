@@ -41,7 +41,7 @@ console.log(`✅ CORS Configured. Allowed origins: ${ALLOWED_ORIGINS.length > 0 
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) {
+    if (!origin || origin === 'null' || ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) {
       return callback(null, true);
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
