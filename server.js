@@ -32,22 +32,7 @@ const PORT = process.env.PORT || 8000;
 
 // Middleware
 app.use(requestLogger);
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map(o => o.trim())
-  .filter(Boolean);
-
-console.log(`✅ CORS Configured. Allowed origins: ${ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS.join(', ') : '(none — will reject all browser requests)'}`);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || origin === 'null' || ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) {
-      return callback(null, true);
-    }
-    callback(new Error(`CORS: origin ${origin} not allowed`));
-  },
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json({ limit: '16kb' }));
 
 // 1. Health check — fully public
