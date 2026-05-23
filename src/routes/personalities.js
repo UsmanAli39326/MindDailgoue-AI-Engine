@@ -1,4 +1,5 @@
 import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { getPersonaById, listPersonas } from '../personaManager.js';
 
 const router = express.Router();
@@ -168,7 +169,7 @@ router.post('/', async (req, res) => {
     const { personalityService } = await import('../services/personalityService.js');
     
     // Generate unique ID for this custom persona
-    const id = `custom-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const id = `custom-${uuidv4()}`;
 
     const newPersona = {
       name,
