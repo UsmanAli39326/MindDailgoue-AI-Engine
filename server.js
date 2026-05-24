@@ -51,7 +51,8 @@ app.use(rateLimit);
 // 5. Protected routes
 app.use('/chat', chatRoutes);
 app.use('/personalities', personalityRoutes);
-// ... rest of routes
+
+
 app.use('/admin', adminRoutes);
 app.use('/mood', moodRoutes);
 app.use('/insights', insightsRoutes);

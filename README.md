@@ -31,7 +31,7 @@ Designed to be the "Brain" behind mental health applications, MindDialogue focus
 
 ### 1. Prerequisites
 - [Node.js](https://nodejs.org/) (v18 or higher)
-- An [OpenRouter](https://openrouter.ai/) API Key
+- A [Groq](https://groq.com/) API Key
 
 ### 2. Installation
 ```bash
@@ -41,8 +41,8 @@ npm install
 ### 3. Configuration
 Create a `.env` file in the root directory (never commit this!):
 ```env
-OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=openrouter/free
+GROQ_API_KEY=your_key_here
+GROQ_MODEL=llama3-8b-8192
 ```
 
 You must also obtain a `google-services.json` file from the Firebase console (Project Settings > Service accounts) and place it in the root directory. **Never commit this file.** See `google-services.json.example` for the required format.
@@ -60,7 +60,7 @@ The server will be available at `http://localhost:8000`.
 Build and run the engine using Docker:
 ```bash
 docker build -t mind-dialogue .
-docker run -p 8000:8000 -e OPENROUTER_API_KEY=your_key mind-dialogue
+docker run -p 8000:8000 -e GROQ_API_KEY=your_key mind-dialogue
 ```
 
 ---

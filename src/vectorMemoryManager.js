@@ -7,7 +7,6 @@
 
 // ─── Configuration ──────────────────────────────────────────
 
-const OLLAMA_BASE_URL = 'http://localhost:11434';
 const EMBED_ENDPOINT = '/api/embeddings';
 
 // CONSTRAINT: Must use nomic-embed-text for high quality embeddings

@@ -13,9 +13,9 @@ if (fs.existsSync('.env.local')) {
 
 // ─── Configuration ──────────────────────────────────────────
 
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama3-8b-8192';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 
 const DEFAULT_TEMPERATURE = 0.7;
 const REQUEST_TIMEOUT_MS = 120_000;
@@ -56,9 +56,9 @@ export async function callLLM({
   const timeoutMs = useHosted ? 15_000 : (parseInt(process.env.LLM_TIMEOUT_MS) || REQUEST_TIMEOUT_MS);
 
   if (useHosted) {
-    // Hosted OpenRouter Flow
-    if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY === 'your_openrouter_key_here') {
-      throw new Error('OpenRouter API key is missing. Please set OPENROUTER_API_KEY in .env.local.');
+    // Hosted Groq Flow
+    if (!GROQ_API_KEY || GROQ_API_KEY === 'your_groq_key_here') {
+      throw new Error('Groq API key is missing. Please set GROQ_API_KEY in .env.local.');
     }
 
     const requestBody = {
@@ -76,13 +76,11 @@ export async function callLLM({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      response = await fetch(OPENROUTER_API_URL, {
+      response = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://github.com/google/antigravity',
-          'X-Title': 'MindDialogue LLM Assistant',
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -102,11 +100,11 @@ export async function callLLM({
 
       if (error.name === 'AbortError') {
         throw new Error(
-          `OpenRouter request timed out after ${timeoutMs / 1000}s.`
+          `Groq request timed out after ${timeoutMs / 1000}s.`
         );
       }
       throw new Error(
-        `Failed to connect to OpenRouter at ${OPENROUTER_API_URL}. Original error: ${error.message}`
+        `Failed to connect to Groq at ${GROQ_API_URL}. Original error: ${error.message}`
       );
     }
 
@@ -114,7 +112,7 @@ export async function callLLM({
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
-      const errorMessage = errorData.error?.message || 'OpenRouter returned non-OK status';
+      const errorMessage = errorData.error?.message || 'Groq returned non-OK status';
 
       console.log(JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -126,7 +124,7 @@ export async function callLLM({
       }));
 
       throw new Error(
-        `OpenRouter returned HTTP ${response.status}: ${errorMessage}`
+        `Groq returned HTTP ${response.status}: ${errorMessage}`
       );
     }
 
@@ -230,7 +228,7 @@ export async function callLLM({
 
 // Export internals for testing / configuration override
 export const _internals = {
-  OPENROUTER_API_URL,
+  GROQ_API_URL,
   DEFAULT_MODEL,
   DEFAULT_TEMPERATURE,
   REQUEST_TIMEOUT_MS,
