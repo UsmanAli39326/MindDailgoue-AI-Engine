@@ -14,7 +14,7 @@ if (fs.existsSync('.env.local')) {
 // ─── Configuration ──────────────────────────────────────────
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama3-8b-8192';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 
 const DEFAULT_TEMPERATURE = 0.7;
@@ -67,7 +67,7 @@ export async function callLLM({
         { role: 'user', content: prompt }
       ],
       temperature,
-      stop: ['[THERAPIST IDENTITY]', '[PERSONALITY]', '[USER EMOTIONAL STATE]', '[SAFETY CONTEXT]', '[CONVERSATION HISTORY]', '[CURRENT INPUT]', '[INSTRUCTIONS]', '[RESPONSE]', 'User:', '👤 User:']
+      stop: ['[RESPONSE]', 'User:', '👤 User:']
     };
 
     let response;
