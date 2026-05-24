@@ -109,8 +109,16 @@ export function buildSummary(logs) {
   }
 
   // Find dominant
-  const dominant_emotion = Object.entries(emotionCounts)
-    .sort((a, b) => b[1] - a[1])[0][0];
+  let dominant_emotion = 'calm';
+  const extremeEmotions = Object.entries(emotionCounts).filter(([emotion]) => emotion !== 'calm');
+  
+  if (extremeEmotions.length > 0) {
+    // Sort extreme emotions by count descending to break ties by frequency
+    extremeEmotions.sort((a, b) => b[1] - a[1]);
+    dominant_emotion = extremeEmotions[0][0];
+  } else if (emotionCounts['calm']) {
+    dominant_emotion = 'calm';
+  }
 
   return {
     total_entries: total,
