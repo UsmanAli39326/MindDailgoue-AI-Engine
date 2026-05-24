@@ -9,6 +9,7 @@ import { summarizeAndStore } from '../services/sessionSummarizer.js';
 import { updateThemes } from '../services/themeTracker.js';
 import { deleteSessionMessages } from '../services/encryptedStorage.js';
 import { getRecentHistory } from '../memoryManager.js';
+import { getPersonaById } from '../personaManager.js';
 
 const router = express.Router();
 
@@ -27,8 +28,17 @@ router.post('/', async (req, res) => {
 
     if (!db) return res.status(503).json({ error: 'Firestore not available' });
 
+    let botName = 'Unknown Therapist';
+    try {
+      const persona = await getPersonaById(therapistId, uid);
+      botName = persona.name;
+    } catch (err) {
+      console.warn(`[SESSIONS ROUTE] Could not find persona name for id ${therapistId}:`, err.message);
+    }
+
     const sessionDoc = {
       therapistId,
+      botName,
       createdAt: new Date().toISOString(),
       status: 'active',
       messageCount: 0,

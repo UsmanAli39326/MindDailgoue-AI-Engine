@@ -9,8 +9,8 @@ import { db } from '../config/firebase.js';
 
 // ─── Default Limits ──────────────────────────────────────────
 const DEFAULT_LIMITS = {
-  messagesPerHour: 60,
-  sessionsPerDay: 5,
+  messagesPerHour: 300,
+  sessionsPerDay: 20,
 };
 
 // ─── Per-tier overrides (set via admin endpoint) ─────────────
