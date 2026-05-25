@@ -3,8 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { getPersonaById, listPersonas } from '../personaManager.js';
 import multer from 'multer';
 
-const upload = multer({ 
-  storage: multer.memoryStorage(), 
+const upload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
@@ -21,10 +21,10 @@ router.get('/initial-message', async (req, res) => {
 
   try {
     const persona = await getPersonaById(therapistId);
-    res.json({ 
+    res.json({
       therapistId: persona.id,
       name: persona.name,
-      initialMessage: persona.initialMessage 
+      initialMessage: persona.initialMessage
     });
   } catch (error) {
     res.status(404).json({ error: error.message });
@@ -194,7 +194,7 @@ router.post('/', upload.single('avatar'), async (req, res) => {
     }
 
     const { personalityService } = await import('../services/personalityService.js');
-    
+
     // Generate unique ID for this custom persona
     const id = `custom-${uuidv4()}`;
 

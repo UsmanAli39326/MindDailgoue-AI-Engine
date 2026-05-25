@@ -29,10 +29,12 @@ router.post('/', async (req, res) => {
     if (!db) return res.status(503).json({ error: 'Firestore not available' });
 
     let botName = 'Unknown Therapist';
+    let botAvatar = null;
     let initialMessage = 'Hello, how can I support you today?';
     try {
       const persona = await getPersonaById(therapistId, uid);
       botName = persona.name;
+      botAvatar = persona.avatarAsset || null;
       initialMessage = persona.initialMessage || persona.greeting || initialMessage;
     } catch (err) {
       console.warn(`[SESSIONS ROUTE] Could not find persona name for id ${therapistId}:`, err.message);
@@ -41,6 +43,7 @@ router.post('/', async (req, res) => {
     const sessionDoc = {
       therapistId,
       botName,
+      botAvatar,
       createdAt: new Date().toISOString(),
       status: 'active',
       messageCount: 0,
