@@ -7,7 +7,7 @@ import express from 'express';
 import { db } from '../config/firebase.js';
 import { summarizeAndStore } from '../services/sessionSummarizer.js';
 import { updateThemes } from '../services/themeTracker.js';
-import { deleteSessionMessages } from '../services/encryptedStorage.js';
+import { deleteSessionMessages, storeEncryptedMessage } from '../services/encryptedStorage.js';
 import { getRecentHistory } from '../memoryManager.js';
 import { getPersonaById } from '../personaManager.js';
 
@@ -29,9 +29,11 @@ router.post('/', async (req, res) => {
     if (!db) return res.status(503).json({ error: 'Firestore not available' });
 
     let botName = 'Unknown Therapist';
+    let initialMessage = 'Hello, how can I support you today?';
     try {
       const persona = await getPersonaById(therapistId, uid);
       botName = persona.name;
+      initialMessage = persona.initialMessage || persona.greeting || initialMessage;
     } catch (err) {
       console.warn(`[SESSIONS ROUTE] Could not find persona name for id ${therapistId}:`, err.message);
     }
@@ -46,6 +48,14 @@ router.post('/', async (req, res) => {
     };
 
     const ref = await db.collection('users').doc(uid).collection('sessions').add(sessionDoc);
+
+    // Store the bot's initial message
+    await storeEncryptedMessage(uid, {
+      ciphertext: initialMessage,
+      iv: 'plaintext',
+      sessionId: ref.id,
+      role: 'assistant'
+    });
 
     res.status(201).json({ sessionId: ref.id, ...sessionDoc });
   } catch (error) {
