@@ -1,6 +1,12 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getPersonaById, listPersonas } from '../personaManager.js';
+import multer from 'multer';
+
+const upload = multer({ 
+  storage: multer.memoryStorage(), 
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 const router = express.Router();
 
@@ -124,14 +130,14 @@ function generatePromptAndGreeting({ name, traits = [], tone = 'Balanced', depth
 }
 
 // POST /personalities - Create a custom private persona for this user
-router.post('/', async (req, res) => {
+router.post('/', upload.single('avatar'), async (req, res) => {
   try {
     const uid = req.user?.uid;
     if (!uid) {
       return res.status(401).json({ error: 'Unauthorized. Login required to create custom companion.' });
     }
 
-    const {
+    let {
       name,
       avatarAsset,
       traits = [],
@@ -143,8 +149,29 @@ router.post('/', async (req, res) => {
       initialMessage: rawInitialMessage
     } = req.body;
 
+    // Handle form-data strings
+    if (typeof traits === 'string') {
+      try {
+        traits = JSON.parse(traits);
+      } catch (e) {
+        traits = traits.split(',').map(t => t.trim());
+      }
+    }
+
     if (!name) {
       return res.status(400).json({ error: 'Missing required field: name is required.' });
+    }
+
+    // Convert uploaded file to base64 if present
+    let finalAvatarAsset = avatarAsset;
+    if (req.file) {
+      const b64 = req.file.buffer.toString('base64');
+      finalAvatarAsset = `data:${req.file.mimetype};base64,${b64}`;
+    }
+
+    // Fallback to generic doctor avatar
+    if (!finalAvatarAsset) {
+      finalAvatarAsset = '/assets/avatars/dr_fallback.png';
     }
 
     let finalPrompt = rawPrompt;
@@ -180,7 +207,7 @@ router.post('/', async (req, res) => {
       backstory,
       personalityPrompt: finalPrompt,
       initialMessage: finalInitialMessage,
-      avatarAsset: avatarAsset || 'assets/avatars/friendly.png'
+      avatarAsset: finalAvatarAsset
     };
 
     const saved = await personalityService.saveUserCustom(uid, id, newPersona);

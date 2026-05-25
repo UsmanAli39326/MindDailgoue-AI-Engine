@@ -16,7 +16,7 @@ const PERSONAS = [
     name: 'Empathic Listener',
     style: 'Warm, active listening, and gentle emotional guidance',
     tone: 'Warm, calm, and validating',
-    avatarAsset: 'https://cdn-icons-png.flaticon.com/512/4140/4140037.png',
+    avatarAsset: '/assets/avatars/dr_fallback.png',
     personalityPrompt:
       'You are Dr. Zara, a licensed mental health therapist.\n' +
       'Speak with warmth and empathy — not like a chatbot.\n' +
@@ -31,7 +31,7 @@ const PERSONAS = [
     name: 'Motivator',
     style: 'Action-oriented, licensed motivational therapy',
     tone: 'Energetic, caring, and professional',
-    avatarAsset: 'assets/avatars/motivator.png',
+    avatarAsset: '/assets/avatars/motivator.png',
     personalityPrompt:
       'You are Coach Ayaan, a licensed motivational therapist.\n' +
       'Speak with energy, care, and professionalism — not like an AI.\n' +
@@ -46,7 +46,7 @@ const PERSONAS = [
     name: 'Mindful Coach',
     style: 'Calm, present-focused, and mindfulness guiding',
     tone: 'Serene, soft, and warm',
-    avatarAsset: 'assets/avatars/mindful.png',
+    avatarAsset: '/assets/avatars/mindful.png',
     personalityPrompt:
       'You are Dr. Lina, a mindfulness therapist.\n' +
       'Speak softly, slowly, and warmly — like a real meditation coach.\n' +
@@ -61,7 +61,7 @@ const PERSONAS = [
     name: 'Cognitive Therapist',
     style: 'Certified Cognitive Behavioral Therapy (CBT)',
     tone: 'Professional, logical, and clear',
-    avatarAsset: 'assets/avatars/cognitive.png',
+    avatarAsset: '/assets/avatars/cognitive.png',
     personalityPrompt:
       'You are Dr. Arman, a certified CBT therapist.\n' +
       'Your responses are limited to 50 words, professional, and logical.\n' +
@@ -76,7 +76,7 @@ const PERSONAS = [
     name: 'Friendly Buddy',
     style: 'Friendly, warm, and supportive companion',
     tone: 'Kind, gentle, and understanding',
-    avatarAsset: 'assets/avatars/friendly.png',
+    avatarAsset: '/assets/avatars/friendly.png',
     personalityPrompt:
       'You are Sam, a supportive companion — kind, warm, and understanding.\n' +
       'Speak like a close friend, but with respect and care.\n' +
@@ -91,7 +91,7 @@ const PERSONAS = [
     name: 'Calm Monk',
     style: 'Certified Cognitive Behavioral Therapy (CBT) / Calm Zen approach',
     tone: 'Calm, professional, and logical',
-    avatarAsset: 'assets/avatars/cognitive.png',
+    avatarAsset: '/assets/avatars/dr_fallback.png',
     personalityPrompt:
       'You are Dr. Arman, a certified CBT therapist.\n' +
       'Your responses are limited to 50 words, professional, and logical.\n' +

@@ -34,6 +34,7 @@ const PORT = process.env.PORT || 8000;
 app.use(requestLogger);
 app.use(cors());
 app.use(express.json({ limit: '16kb' }));
+app.use(express.static('public')); // Serve static assets like avatars
 
 // 1. Health check — fully public
 app.use('/', healthRoutes);
